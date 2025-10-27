@@ -7,17 +7,23 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CustomButton from "../../components/CustomButton";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import OtpTextInput from 'react-native-text-input-otp'
+import { sendOTPEmail, verifyOTP } from "api/api";
+import { showError } from "utils/toast";
 
 
 const verifyEmail = () => {
   const [isSubmitting, setisSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [OTP, setOTP] = useState("");
+    const [secondsLeft, setSecondsLeft] = useState(60);
+  const [isResending, setIsResending] = useState(false);
+  const {email,phone, verifyOption} = useLocalSearchParams();
+  console.log(email,phone,OTP)
 
   const submit = () => {
     setisSubmitting(true);
@@ -29,7 +35,35 @@ const verifyEmail = () => {
       setisSubmitting(false);
       setError("Please enter 6 digit OTP");
     } else {
-      router.replace("/(auth)/location")
+      verifyOTP({email: email as string, phone: phone as string, otp: OTP }).then((response)=>{
+        setisSubmitting(false)
+        router.replace("/(auth)/location")
+
+      }).catch((error)=>{
+        setisSubmitting(false)
+        showError(error.message)
+      })
+
+    }
+  };
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+    const id = setInterval(() => {
+      setSecondsLeft((s) => s - 1);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [secondsLeft]);
+
+  const handleResend = async () => {
+    if (secondsLeft > 0 || isResending) return;
+    try {
+      setIsResending(true);
+      await sendOTPEmail({ email: email as string, phone: phone as string, verifyOption: verifyOption as string });
+      setSecondsLeft(60);
+    } catch (err: any) {
+      showError(err?.message || 'Failed to resend OTP. Please try again.');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -41,11 +75,12 @@ const verifyEmail = () => {
         </View>
         <View>
           <View
-            className="mt-16 p-5 w-full mb-[30px]
-      "
-          >
+            className="mt-16 p-5 w-full mb-[30px]">
+             <TouchableOpacity className="mb-4" onPress={() => router.back()}>
+            <FontAwesome6 name="arrow-left-long" size={25} color="black" />
+          </TouchableOpacity>
 
-            <Text className="font-RalewayBold mt-[20px] self-center text-[28px]">
+            <Text className="font-RalewayBold mt-[20px] self-center text-[28px] text-center">
               Verify your Email/Phone Number
             </Text>
             <View className="flex flex-row mt-2 items-center gap-2 self-center ">
@@ -95,6 +130,17 @@ const verifyEmail = () => {
             <Text className="text-red-500 font-NunitoRegular text-[13px] mt-[10px]">
               {error}
             </Text>
+                <View className="flex-row justify-center items-center mt-4">
+              <Text className="text-gray-500 mr-3 font-NunitoLight">Didn't receive the code?</Text>
+              <TouchableOpacity
+                disabled={secondsLeft > 0 || isResending}
+                onPress={handleResend}
+              >
+                <Text className={`text-primary-600 font-NunitoSemiBold ${secondsLeft > 0 || isResending ? 'opacity-40' : ''}`}>
+                  {secondsLeft > 0 ? `Resend (${String(Math.floor(secondsLeft / 60)).padStart(2,'0')}:${String(secondsLeft % 60).padStart(2,'0')})` : (isResending ? 'Resending...' : 'Resend Code')}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View className="flex flex-1 justify-end flex-col  items-center mt-[120px] p-5">

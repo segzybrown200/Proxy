@@ -12,11 +12,14 @@ import { router } from "expo-router";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { logoutState, selectIsVisitor, VisitorState } from "global/authSlice";
+import { logoutState, selectIsVisitor, selectUser, VisitorState } from "global/authSlice";
 import { useDispatch, useSelector } from "react-redux";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearCart } from "global/listingSlice";
 
 export default function ProfileScreen() {
   const dispatch = useDispatch();
+  const user:any = useSelector(selectUser)
   const select = useSelector(selectIsVisitor);
   const menuItems = [
     {
@@ -72,11 +75,11 @@ export default function ProfileScreen() {
             </Text>
           ) : (
             <View>
-              <Text className="text-2xl font-RalewayBold mt-4">
-                Segun Micah
+              <Text className="text-2xl font-RalewayBold mt-4 self-center">
+                {user?.data?.user?.name}
               </Text>
-              <Text className="text-gray-500 text-lg font-NunitoRegular">
-                segun@example.com
+              <Text className="text-gray-500 text-lg self-center font-NunitoRegular">
+                {user?.data?.user?.email}
               </Text>
             </View>
           )}
@@ -129,7 +132,10 @@ export default function ProfileScreen() {
           className="bg-[#F8F9FA] rounded-2xl flex-row items-center justify-between p-4 mb-10"
           onPress={() => {
             if(!select){
+              AsyncStorage.removeItem('sessionId');
+              dispatch(clearCart())
               dispatch(logoutState());
+              router.replace("/(auth)/login")
             }else{
               router.replace("/(auth)/login")
               dispatch(VisitorState(false));

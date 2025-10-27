@@ -13,44 +13,32 @@
     import { useLocalSearchParams, router } from 'expo-router';
     import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart, selectCartItems, increaseQuantity, decreaseQuantity } from 'global/listingSlice';
+import { selectUser } from 'global/authSlice';
 
     const { width: SCREEN_WIDTH } = Dimensions.get('window');
     const CAROUSEL_HEIGHT = 300;
 
     const Details = () => {
+      const dispatch = useDispatch();
+      const cartItems = useSelector(selectCartItems);
+      const selector:any = useSelector(selectUser)
       const params = useLocalSearchParams();
       const { id } = params as { id?: string };
       const scrollRef = useRef<ScrollView | null>(null);
       const [activeIndex, setActiveIndex] = useState(0);
-      const [quantity, setQuantity] = useState(0);
+      const [quantity, setQuantity] = useState(1);
+      const {item}:any = useLocalSearchParams()
+
+  const parseItems = JSON.parse(item)
+  const cartItem = cartItems.find((ci:any) => ci.id === parseItems.id);
+
+    const user = selector?.data?.user
+
+      
 
       // Placeholder product data (replace with real data later)
-      const product = {
-        id: id ?? '1',
-        title: 'Nike Sneaker',
-        rating: 4.7,
-        likes: '1.5k',
-        views: '1.5k',
-        description:
-          'High-top design for ankle support during quick cuts and jumps. Air cushioning for explosive responsiveness on the court. Durable rubber outsole with herringbone traction for multi-directional grip.',
-        brand: 'Nike',
-        size: '5,10,20,50',
-        gender: 'Male, Female',
-        condition: 'Brand New',
-        addressTitle: 'Store Address',
-        address: 'Lekki Phase 1 Ikate, Lekki-Epe Expressway Epe Lagos, Nigeria',
-        vendor: {
-          name: 'Michael Segun',
-          phone: '+2347042604550',
-          avatar: require('../../../assets/images/artist-2 2.png'),
-        },
-        price: '₦23,000',
-        images: [
-          require('../../../assets/images/sneaker.png'),
-          require('../../../assets/images/sneaker.png'),
-          require('../../../assets/images/sneaker.png'),
-        ],
-      };
 
       const onMomentumScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
         const offsetX = e.nativeEvent.contentOffset.x;
@@ -69,14 +57,16 @@ import React, { useRef, useState } from 'react';
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={onMomentumScrollEnd}
               style={{ width: SCREEN_WIDTH, height: CAROUSEL_HEIGHT }}>
-              {product.images.map((img, idx) => (
-                <Image
-                  key={idx}
-                  source={img}
-                  style={{ width: SCREEN_WIDTH, height: CAROUSEL_HEIGHT }}
-                  resizeMode="cover"
-                />
-              ))}
+              {parseItems?.media
+                ?.filter((img: any) => !parseItems.isDigital || img.mimeType === 'image/jpeg')
+                .map((img:any) => (
+                  <Image
+                    key={img.id}
+                    source={{uri:img.url}}
+                    style={{ width: SCREEN_WIDTH, height: CAROUSEL_HEIGHT }}
+                    resizeMode="cover"
+                  />
+                ))}
             </ScrollView>
 
             {/* overlay buttons */}
@@ -91,74 +81,79 @@ import React, { useRef, useState } from 'react';
 
             {/* dots */}
             <View className="absolute left-0 right-0 -bottom-7 flex-row justify-center items-center">
-              {product.images.map((_, i) => (
-                <View
-                  key={i}
-                  style={{
-                    width: i === activeIndex ? 20 : 8,
-                    height: 8,
-                    borderRadius: 4,
-                    marginHorizontal: 4,
-                    backgroundColor: i === activeIndex ? '#2563EB' : '#E5E7EB',
-                  }}
-                />
-              ))}
+              {parseItems?.media
+                ?.filter((img: any) => !parseItems.isDigital || img.mimeType === 'image/jpeg')
+                .map((i:any, inx:any) => (
+                  <View
+                    key={i?.id || inx}
+                    style={{
+                      width: i.id || inx === activeIndex ? 20 : 8,
+                      height: 8,
+                      borderRadius: 4,
+                      marginHorizontal: 4,
+                      backgroundColor: i.id || inx === activeIndex ? '#2563EB' : '#E5E7EB',
+                    }}
+                  />
+                ))}
             </View>
           </View>
 
           {/* Content */}
           <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
             <View className="px-4 py-4">
-              <Text className="text-2xl mt-6 font-RalewayBold">{product.title}</Text>
-              <View className="flex-row items-center gap-3 mt-2">
+              <Text className="text-2xl mt-6 font-RalewayBold">{parseItems.title}</Text>
+              {/* <View className="flex-row items-center gap-3 mt-2">
                 <View className="flex-row items-center">
                   <Ionicons name="star" size={16} color="#FBBF24" />
                   <Text className="ml-1 font-NunitoSemiBold">{product.rating}</Text>
                 </View>
                 <Text className="ml-2 font-NunitoSemiBold">⭐ {product.likes}</Text>
                 <Text className="ml-2 font-NunitoSemiBold">👍 {product.views}</Text>
-              </View>
+              </View> */}
 
-              <Text className="mt-4 text-gray-600 font-NunitoRegular">{product.description}</Text>
-
-              <View className="mt-6 grid grid-cols-3 gap-4">
-                <View>
-                  <Text className="text-lg font-RalewayMedium text-gray-500">Brand</Text>
-                  <Text className="mt-1 font-NunitoBold text-lg">{product.brand}</Text> 
-                </View>
-                <View>
-                  <Text className="text-lg font-RalewayMedium text-gray-500">Size</Text>
-                  <Text className="mt-1 font-NunitoMedium text-lg">{product.size}</Text>
-                </View>
-                <View>
-                  <Text className="text-lg font-RalewayMedium text-gray-500">Gender</Text>
-                  <Text className="mt-1 font-NunitoBold text-lg">{product.gender}</Text>
-                </View>
-              </View>
-
-              <View className="mt-6">
+              <Text className="mt-4 text-gray-600 font-NunitoRegular">{parseItems.description}</Text>
+              <View className="mt-6 flex flex-row gap-3 items-center">
+                <View className=''>
                 <Text className="text-lg font-RalewayMedium text-gray-500">Condition</Text>
-                <Text className="mt-1 font-NunitoBold text-lg">{product.condition}</Text>
+                <Text className="mt-1 font-NunitoBold capitalize text-lg">{parseItems.condition}</Text>
               </View>
+
+             <View className=' flex flex-row flex-wrap gap-2 justify-between '>
+               {
+                parseItems?.extraDetails.length > 0 && (
+                  parseItems?.extraDetails?.map((details:any,index:number)=>(
+                       <View key={index} className=' '>
+                      <Text className='text-lg font-RalewayMedium text-gray-500'>{details.title}</Text>
+                      <Text className='mt-1 font-NunitoBold capitalize text-lg'>{details.description}</Text>
+                    </View>
+                  ))
+                )
+              }
+             </View>
+
+             </View>
+
+          
 
               <View className="mt-6">
                <View className='flex flex-row gap-4 mb-1'>
-                 <Text className="font-NunitoBold text-lg text-textColor-100">{product.addressTitle}</Text>
-                <Text className=" font-NunitoBold text-lg">Lagos, Nigeria</Text>
+                 <Text className="font-NunitoBold text-lg text-textColor-100">Vendors Address</Text>
+                <Text className=" font-NunitoBold text-lg">{parseItems?.seller?.vendorApplication.location?.city}, {parseItems?.seller?.vendorApplication.location?.country}</Text>
                </View>
-                <Text className="text-gray-500 mt-1 font-NunitoLight">{product.address}</Text>
+                <Text className="text-gray-500 mt-1 font-NunitoLight">{parseItems?.seller?.vendorApplication.location?.Address}</Text>
               </View>
 
-              <View className="mt-6 flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Image source={product.vendor.avatar} className="w-12 h-12 rounded-full" />
+              <View className="mt-6 flex-row items-center  justify-between">
+                <View className="flex-row items-center relative ">
+                  <View className='bottom-0 z-30 righ-8 absolute rounded-full bg-green-500 border border-white p-1'/>
+                  <Image source={{uri:parseItems?.seller?.kycDocument.selfieUrl}} className="w-12 h-12 rounded-full" />
                   <View className="ml-3">
                     <Text className="font-NunitoSemiBold text-lg">Vendor Profile</Text>
-                    <Text className="text-sm text-gray-500 font-NunitoRegular">Name: {product.vendor.name}</Text>
-                    <Text className="text-sm font-NunitoRegular text-gray-500">Phone.No {product.vendor.phone}</Text>
+                    <Text className="text-sm text-gray-500 font-NunitoRegular">Name: {parseItems?.seller.name}</Text>
+                    <Text className="text-sm font-NunitoRegular text-gray-500">Phone.No {parseItems?.seller.phone}</Text>
                   </View>
                 </View>
-                <TouchableOpacity className="bg-primary-100 px-3 py-2 rounded-md">
+                <TouchableOpacity onPress={()=>router.push({pathname: "/(tabs)/(profile)/chat", params: {seller: JSON.stringify(parseItems), user: JSON.stringify(user) }})} className="bg-primary-100 px-3 py-2 rounded-md">
                   <Text className="text-white font-NunitoSemiBold">Start Chat</Text>
                 </TouchableOpacity>
               </View>
@@ -169,33 +164,40 @@ import React, { useRef, useState } from 'react';
           <View className="absolute left-0 right-0 bottom-6 bg-white px-4 py-4 border-t border-gray-100 flex-row items-center justify-between">
             <View>
               <Text className="text-gray-500 font-RalewayMedium">Price</Text>
-              <Text className="text-2xl font-RalewayBold mt-1 ">{product.price}</Text>
+              <Text className="text-2xl font-RalewayBold mt-1 ">{parseItems?.price}</Text>
             </View>
-            {quantity === 0 ? (
-              <TouchableOpacity
-                className="bg-primary-100 px-6 py-3 rounded-lg"
-                onPress={() => setQuantity(1)}>
-                <Text className="text-white  font-NunitoSemiBold">Add to Cart</Text>
-              </TouchableOpacity>
-            ) : (
+            {cartItem ? (
               <View className="flex-row items-center bg-white rounded-lg">
                 <TouchableOpacity
                   className="px-2 py-2 bg-primary-100 rounded-l-lg"
-                  onPress={() => setQuantity(prev => {
-                    const next = prev - 1;
-                    return next < 0 ? 0 : next;
-                  })}>
+                  onPress={() => dispatch(decreaseQuantity(parseItems.id))}
+                >
                   <Ionicons name="remove" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
                 <View className="px-4 py-2">
-                  <Text className="text-lg font-NunitoBold">{quantity}</Text>
+                  <Text className="text-lg font-NunitoBold">{cartItem.quantity}</Text>
                 </View>
                 <TouchableOpacity
                   className="px-2 py-2 bg-primary-100 rounded-r-lg"
-                  onPress={() => setQuantity(prev => prev + 1)}>
+                  onPress={() => dispatch(increaseQuantity(parseItems.id))}
+                >
                   <Ionicons name="add" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
+            ) : (
+              <TouchableOpacity
+                className="bg-primary-100 px-6 py-3 rounded-lg"
+                onPress={() => dispatch(addToCart({
+                  id: parseItems.id,
+                  title: parseItems.title,
+                  price: parseItems.price,
+                  quantity,
+                  media: parseItems.media,
+                  seller: parseItems.seller,
+                }))}
+              >
+                <Text className="text-white font-NunitoSemiBold">Add to Cart</Text>
+              </TouchableOpacity>
             )}
           </View>
         </SafeAreaView>

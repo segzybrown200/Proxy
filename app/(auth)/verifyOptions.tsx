@@ -9,16 +9,41 @@ import React, { useState } from "react";
 import CustomButton from "../../components/CustomButton";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import Fontisto from '@expo/vector-icons/Fontisto';
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { sendOTPEmail } from "api/api";
+import { showError } from "utils/toast";
 
 const verifyOptions = () => {
   const [isSubmitting, setisSubmitting] = useState(false);
   const [method, setMethod] = useState<'whatsapp'|'email'>('whatsapp');
+  const {email,phone} = useLocalSearchParams();
 
   const handleNext = () => {
     // navigate and include selected method as query param
-    router.push(`/(auth)/verify-email?method=${method}`);
+    setisSubmitting(true);
+    if(method === 'whatsapp'){
+      sendOTPEmail({email: email as string, phone: phone as string, verifyOption: 'whatsapp'}).then((response) => {
+        console.log("OTP sent via WhatsApp:", response);
+        setisSubmitting(false);
+        router.push({pathname: `/(auth)/verify-email` , params: {email: email, phone: phone, verifyOption: 'whatsapp'}});
+      }).catch((error) => {
+        setisSubmitting(false);
+        showError("Failed to send OTP via WhatsApp. Please try again.");
+      });
+      
+    }else if(method === 'email'){
+      sendOTPEmail({email: email as string, phone: phone as string, verifyOption: 'email'}).then((response) => {
+        console.log("OTP sent via Email:", response.data);
+        setisSubmitting(false);
+        router.push(`/(auth)/verify-email`);
+        router.push({pathname: `/(auth)/verify-email` , params: {email: email, phone: phone, verifyOption: 'email'}});
+      }).catch((error) => {
+        console.log(error)
+        setisSubmitting(false);
+        showError("Failed to send OTP via Email. Please try again.");
+      });
   }
+};
 
   return (
     <>

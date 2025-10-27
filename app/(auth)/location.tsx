@@ -15,6 +15,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import * as Location from "expo-location";
 import { useDispatch } from "react-redux";
 import { VisitorState } from "global/authSlice";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Address = () => {
   const { visitor } = useLocalSearchParams();
@@ -35,6 +36,17 @@ const Address = () => {
       await fetchAndSetLocation();
     })();
   }, []);
+
+  const saveLocationToStorage = async (locationData: {
+    address: string;
+    coords?: { latitude: number; longitude: number } | null;
+  }) => {
+    try {
+      await AsyncStorage.setItem('userLocation', JSON.stringify(locationData));
+    } catch (e) {
+      console.error('Error saving location:', e);
+    }
+  };
 
   const fetchAndSetLocation = async () => {
     setLoadingLocation(true);
@@ -134,10 +146,15 @@ const Address = () => {
                 <CustomButton
                   title="Confirm Location"
                   isLoading={isSubmitting}
-                  handlePress1={() => {
+                  handlePress1={async () => {
                     // Navigate to home as visitor and change global state of visitor to true
                     setisSubmitting(true);
                     dispatch(VisitorState(true));
+                    // Save location before navigating
+                    await saveLocationToStorage({
+                      address,
+                      coords
+                    });
                     setTimeout(() => {
                       setisSubmitting(false);
                       router.replace(`/(tabs)/(home)`);
@@ -148,12 +165,17 @@ const Address = () => {
                 <CustomButton
                   title="Confirm Location"
                   isLoading={isSubmitting}
-                  handlePress1={() => {
+                  handlePress1={async () => {
                     // Navigate with current address / coords if available
                     setisSubmitting(true);
                     const finalAddr = address || "";
                     const lat = coords?.latitude;
                     const lon = coords?.longitude;
+                    // Save location before navigating
+                    await saveLocationToStorage({
+                      address: finalAddr,
+                      coords
+                    });
                     const qp = `address=${encodeURIComponent(finalAddr)}${lat ? `&lat=${lat}` : ""}${lon ? `&lon=${lon}` : ""}`;
                     router.push(`/(auth)/congratulation?${qp}`);
                   }}

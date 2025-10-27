@@ -22,6 +22,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Apple from "../../assets/icons/Apple.svg"
 import Google from "../../assets/icons/Google.svg"
 import { loginState } from "global/authSlice";
+import { loginUser } from "api/api";
+import { showError } from "utils/toast";
 
 const Login = () => {
   const [isSubmitting, setisSubmitting] = useState(false);
@@ -47,8 +49,19 @@ const Login = () => {
     };
     setisSubmitting(true);
     Keyboard.dismiss();
-    dispatch(loginState(FinalData));
-    setisSubmitting(false);
+    loginUser(FinalData)
+      .then((response) => {
+        setisSubmitting(false);
+        console.log("Login successful:", response.data);
+        console.log(response.data)
+        dispatch(loginState(response.data));
+        // router.replace("/(app)/home");
+      })
+      .catch((error) => {
+        setisSubmitting(false);
+        console.log("Login error:", error);
+        showError(error.message);
+      });
   };
 
   const scrollRef = useRef<ScrollView>(null);

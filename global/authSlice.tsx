@@ -4,11 +4,13 @@ import { RootState } from "./store";
 interface AuthState {
     user: object | null;
     isVisitor: boolean;
+    pendingUser: object | null;
 }
 
 const initialState: AuthState = {
     user: null,
     isVisitor: false,
+    pendingUser: null,
 };
 
 const authState = createSlice({
@@ -23,12 +25,19 @@ const authState = createSlice({
         },
         VisitorState: (state, action: PayloadAction<boolean>) => {
             state.isVisitor = action.payload;
+        },
+        pendingUserState: (state, action: PayloadAction<object | null>) => {
+            state.pendingUser = action.payload;
+        },
+        pendingUserLogout: (state) => {
+            state.pendingUser = null;
         }
     },
 });
 
-export const { loginState, logoutState, VisitorState } = authState.actions;
+export const { loginState, logoutState, VisitorState, pendingUserState,pendingUserLogout } = authState.actions;
 export const selectUser = (state: RootState) => state.auth.user;
 export const selectIsVisitor = (state: RootState) => state.auth.isVisitor;
+export const selectPendingUser = (state: RootState) => state.auth.pendingUser;
 
 export default authState.reducer;

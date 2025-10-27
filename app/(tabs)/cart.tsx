@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -6,54 +6,20 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from "react-native";
+import { useSelector, useDispatch } from "react-redux";
+import { selectCartItems, selectCartTotal, increaseQuantity, decreaseQuantity, removeFromCart } from "global/listingSlice";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import CustomButton from "components/CustomButton";
+import { selectIsVisitor } from "global/authSlice";
 
 const CartScreen = () => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Nike Sneaker",
-      variant: "Pink, Size M",
-      price: 23000,
-      image: require("../../assets/images/sneaker.png"),
-      qty: 1,
-    },
-    {
-      id: 2,
-      name: "Watch",
-      variant: "Black, Size M",
-      price: 23000,
-      image:require("../../assets/images/sneaker.png"),
-      qty: 1,
-    },
-  ]);
-
-  const increaseQty = (id:number) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, qty: item.qty + 1 } : item
-      )
-    );
-  };
-
-  const decreaseQty = (id:number) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id && item.qty > 1
-          ? { ...item, qty: item.qty - 1 }
-          : item
-      )
-    );
-  };
-
-  const removeItem = (id:number) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const total = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const cartItems = useSelector(selectCartItems);
+  const total = useSelector(selectCartTotal);
+  const dispatch = useDispatch();
+  const select = useSelector(selectIsVisitor);
 
   if (cartItems.length === 0) {
     return (
@@ -96,21 +62,21 @@ const CartScreen = () => {
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
       >
-        {cartItems.map((item) => (
+        {cartItems.map((item:any) => (
           <View
             key={item.id}
             className="flex-row items-center bg-[#F6F6F6] rounded-2xl p-3 mb-4"
           >
             <Image
-              source={item.image}
+              source={{uri: item.media?.[0]?.url}}
               className="w-20 h-20 rounded-xl"
               resizeMode="cover"
             />
 
             <View className="flex-1 ml-4">
-              <Text className="font-NunitoBold text-base">{item.name}</Text>
+              <Text className="font-NunitoBold text-base">{item.title}</Text>
               <Text className="font-NunitoRegular text-gray-500">
-                {item.variant}
+                {/* Add variant or other info if needed */}
               </Text>
               <Text className="font-NunitoBold text-lg mt-1">
                 ₦{item.price.toLocaleString()}
@@ -118,7 +84,7 @@ const CartScreen = () => {
             </View>
 
             <TouchableOpacity
-              onPress={() => removeItem(item.id)}
+              onPress={() => dispatch(removeFromCart(item.id))}
               className="absolute top-2 left-2 bg-white p-1.5 rounded-full shadow-sm"
             >
               <Ionicons name="trash-outline" size={18} color="red" />
@@ -126,16 +92,16 @@ const CartScreen = () => {
 
             <View className="flex-row items-center">
               <TouchableOpacity
-                onPress={() => decreaseQty(item.id)}
+                onPress={() => dispatch(decreaseQuantity(item.id))}
                 className="bg-[#EEF1FF] p-1 rounded-full"
               >
                 <Ionicons name="remove-outline" size={22} color="#0056FF" />
               </TouchableOpacity>
               <Text className="mx-2 text-base font-NunitoBold">
-                {item.qty}
+                {item.quantity}
               </Text>
               <TouchableOpacity
-                onPress={() => increaseQty(item.id)}
+                onPress={() => dispatch(increaseQuantity(item.id))}
                 className="bg-[#EEF1FF] p-1 rounded-full"
               >
                 <Ionicons name="add-outline" size={22} color="#0056FF" />
@@ -157,8 +123,11 @@ const CartScreen = () => {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push("/(tabs)/(home)/payment")}
+          onPress={() => (
+            select ? Alert.alert("Login as a User", "Please log in to proceed with the payment") : router.push("/(tabs)/(home)/payment")
+          )}
           className="bg-[#0056FF] py-4 rounded-2xl items-center"
+
         >
           <Text className="text-white font-NunitoBold text-lg">
             Proceed to Checkout

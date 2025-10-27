@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "764540101089",
+    "project_id": "proxy-5d015",
+    "storage_bucket": "proxy-5d015.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:764540101089:android:be94e5af7865ef0a68b2a0",
+        "android_client_info": {
+          "package_name": "com.ugo234.Proxy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNc_xr6zPDqq5n76OoKV5gEt0h8zzPZdA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

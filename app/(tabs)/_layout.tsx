@@ -10,9 +10,13 @@ import ProfileIcon from '../../assets/icons/profile.svg'
 import ProfileIconFocused from '../../assets/icons/profile-focused.svg'
 import BagIcon from '../../assets/icons/bag.svg'
 import BagIconFocused from '../../assets/icons/bag-focused.svg'
+import { useSelector } from 'react-redux'
+import { selectCartItems } from 'global/listingSlice'
 
 const _layout = () => {
+  const cartItems = useSelector(selectCartItems);
   const pathname = usePathname();
+
     const showTabBar =
     pathname === "/" ||
     pathname === "/cart" ||
@@ -62,6 +66,7 @@ const _layout = () => {
         name="cart"
         options={{
           popToTopOnBlur: true,
+          tabBarBadge: cartItems.length > 0 ? cartItems.length : undefined,
           tabBarIcon: ({ focused }) => (
             <View className={focused ? 'bg-[#004CFF] rounded-full p-2' : ''}>
               {focused ? <BagIconFocused width={24} height={24} /> : <BagIcon width={24} height={24} />}

@@ -14,10 +14,13 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { router } from 'expo-router';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { forgotPassword } from 'api/api';
+import { showError } from 'utils/toast';
 
 const Schema = yup.object({
   email: yup.string().email().required('Email is required'),
 });
+
 
 const ForgotPassword = () => {
   const {
@@ -25,11 +28,20 @@ const ForgotPassword = () => {
     handleSubmit,
     formState: { errors },
   } = useForm({ resolver: yupResolver(Schema) });
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const onSubmit = (data: any) => {
     // Here you'd call your backend to send the reset code to data.email
     // For now navigate to verify-reset-OTP with email as query param
-    router.push(`/(auth)/verify-reset-OTP?email=${encodeURIComponent(data.email)}`);
+    setIsSubmitting(true);
+
+    forgotPassword({ email: data.email }).then(() => {
+      setIsSubmitting(false);
+      router.replace(`/(auth)/reset-password?email=${encodeURIComponent(data.email)}`);
+    }).catch((error) => {
+      setIsSubmitting(false);
+      showError(error?.error?.message)
+    });
   };
 
   return (
@@ -64,7 +76,7 @@ const ForgotPassword = () => {
       </View>
 
       <View className="flex-1 justify-end items-center mb-10">
-        <CustomButton title="Send code" handlePress1={handleSubmit(onSubmit)} />
+        <CustomButton title="Send code" isLoading={isSubmitting} handlePress1={handleSubmit(onSubmit)} />
       </View>
     </KeyboardAvoidingView>
   );

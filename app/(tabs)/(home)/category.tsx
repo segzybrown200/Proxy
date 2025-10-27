@@ -4,6 +4,10 @@ import {
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
+  ScrollView,
+  Image,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { TextInput } from "react-native";
 import React, { useState } from "react";
@@ -18,6 +22,9 @@ import Automobile from "../../../assets/icons/AutoMobile.svg";
 import Drugs from "../../../assets/icons/tablets.svg";
 import Beauty from "../../../assets/icons/Beauty blog.svg";
 import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo } from "react";
+import { AntDesign, Feather, FontAwesome6, Ionicons } from "@expo/vector-icons";
+import { useCategoryListings } from "hooks/useHooks";
 
 const Data = [
   { id: 1, title: "Electronic", icon: <Electronic width={75} height={75} /> },
@@ -51,44 +58,64 @@ const Data1 = [
 ];
 
 const category = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
-  const [selectedCondition, setSelectedCondition] = useState<string[]>([]);
-  const [low, setLow] = useState(0);
-  const [high, setHigh] = useState(200);
-  const [maxDistance, setMaxDistance] = useState("");
-  const { category } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const { category, allCategories, id } = params;
+  const { listings, isLoading, loadMore, isReachingEnd } = useCategoryListings(
+    id as string
+  );
+  // Parse categories from params if available
+  const backendCategories: any = useMemo(() => {
+    if (allCategories) {
+      try {
+        const parsed = JSON.parse(allCategories as string);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    return null;
+  }, [allCategories]);
+  useEffect(() => {
+    if (category && category !== "Category") {
+      setSelected([category as string]);
+    } else {
+      setSelected([]);
+    }
+  }, [category]);
 
-  const toggleCategory = (category: string) => {
-    if (selected.includes(category)) {
-      // unselect
-      setSelected(selected.filter((c) => c !== category));
-    } else {
-      // select
-      setSelected([...selected, category]);
-    }
-  };
-  const toggleCondition = (condition: string) => {
-    if (selectedCondition.includes(condition)) {
-      // unselect
-      setSelectedCondition(selectedCondition.filter((c) => c !== condition));
-    } else {
-      // select
-      setSelectedCondition([...selectedCondition, condition]);
-    }
-  };
-  const resetAll = () => {
-    setMinPrice("");
-    setMaxPrice("");
-    setSelected([]);
-    setSelectedCondition([]);
-    setLow(0);
-    setHigh(200);
-    setMaxDistance("");
-    setIsVisible(false);
-  };
+  const renderListings = ({ item }:any) => (
+      <TouchableOpacity onPress={()=>router.push({pathname:"/(tabs)/(home)/details", params:{item:JSON.stringify(item)}})} className="mt-5 w-[49%] border border-primary-100 rounded-lg">
+          <Image
+            source={{uri: item?.media[0]?.url}}
+            className=" w-full h-40 rounded-lg border-4 border-white shadow-2xl"
+          />
+          <View>
+            <View className="p-1 flex-row justify-between items-start">
+              <Text className="text-xl font-NunitoRegular text-textColor-100 mt-2">
+                {item.title}
+              </Text>
+              <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center mt-1">
+                <FontAwesome6 name="plus" size={18} color="white" />
+              </TouchableOpacity>
+            </View>
+            <Text className="text-[20px] p-1 font-RalewayExtraBold text-textColor-100 ">
+              ₦{item.price}
+            </Text>
+
+            <View className="relative p-2 mt-2 mb-5">
+              <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center">
+                {item.condition.toUpperCase()}
+              </Text>
+              <Text className="font-NunitoMedium text-lg">
+                {item.seller?.vendorApplication?.location?.city},{item.seller?.vendorApplication?.location?.country}
+              </Text>
+            </View>
+          </View>
+          <View className="bg-primary-100 p-2 rounded-b-lg absolute top-4 right-2">
+            <Text className="text-white font-NunitoLight">Verified ID</Text>
+          </View>
+        </TouchableOpacity>
+  )
+
   return (
     <SafeAreaView className="flex-1 bg-[#sF9FAFB] p-4">
       <View className=" mt-5 flex flex-row items-center gap-4">
@@ -109,191 +136,98 @@ const category = () => {
           otherStyles={"flex-1"}
           white="yes"
         />
-        <TouchableOpacity
-          className="ml-3 rounded-md bg-primary-100 p-2"
-          onPress={() => setIsVisible(true)}
-        >
-          <Filter width={30} height={30} />
-        </TouchableOpacity>
       </View>
 
-      {/* Filter Modal */}
-      <Modal
-        visible={isVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setIsVisible(false)}>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.3)",
-              justifyContent: "flex-end",
-              alignItems: "flex-end",
-            }}
-          >
-            <View className="max-h-min w-full bg-white p-4">
-              <View className="flex flex-row items-center justify-between">
-                <Text className="font-RalewaySemiBold text-lg text-primary-100">
-                  Cancel
-                </Text>
-                <Text className="font-RalewaySemiBold text-lg text-textColor-50">
-                  Filter
-                </Text>
-                <TouchableOpacity onPress={resetAll}>
-                  <Text className="font-RalewaySemiBold text-lg text-primary-100">
-                    Reset All
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {/* Price Range */}
-              <View className="mt-5">
-                <Text className="mb-2 font-RalewaySemiBold text-xl">
-                  Price Range
-                </Text>
-                <View className="flex flex-row items-center justify-between">
-                  <TextInput
-                    className="w-[48%] rounded-lg bg-[#F6F6F6] p-3 font-NunitoRegular"
-                    placeholder="Min Price"
-                    keyboardType="numeric"
-                    value={minPrice}
-                    onChangeText={setMinPrice}
-                  />
-                  <TextInput
-                    className="w-[48%] rounded-lg bg-[#F6F6F6] p-3 font-NunitoRegular"
-                    placeholder="Max Price"
-                    keyboardType="numeric"
-                    value={maxPrice}
-                    onChangeText={setMaxPrice}
-                  />
-                </View>
-              </View>
-
-              {/* Category */}
-              <View className="mt-5">
-                <Text className="mb-2 font-RalewaySemiBold text-xl">
-                  Category
-                </Text>
-                {/* Selet Category */}
-                <View className="flex flex-row flex-wrap items-center gap-3">
-                  {categories.map((cat, index) => {
-                    const isSelected = selected.includes(cat);
-                    return (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => toggleCategory(cat)}
-                        className={`flex flex-row items-center gap-2 rounded-lg  p-2 
-                      ${isSelected ? " bg-primary-100" : "bg-primary-400"}
-                      `}
-                      >
-                        <Text
-                          className={`${isSelected ? "font-NunitoSemiBold text-white" : "font-NunitoSemiBold text-primary-100"}`}
-                        >
-                          {cat}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Condition */}
-              <View className="mt-5">
-                <Text className="mb-2 font-RalewaySemiBold text-xl">
-                  Condition
-                </Text>
-                {/* Selet Category */}
-                <View className="flex flex-row flex-wrap items-center gap-3">
-                  {condition.map((con, index) => {
-                    const isSelectedCondition = selectedCondition.includes(con);
-                    return (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => toggleCondition(con)}
-                        className={`flex flex-row items-center gap-2 rounded-lg  p-2 
-                      ${isSelectedCondition ? " bg-primary-100" : "bg-primary-400"}
-                      `}
-                      >
-                        <Text
-                          className={`${isSelectedCondition ? "font-NunitoSemiBold text-white" : "font-NunitoSemiBold text-primary-100"}`}
-                        >
-                          {con}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Location Range */}
-              <View className="mt-5">
-                <Text className="mb-2 font-RalewaySemiBold text-xl">
-                  Location Range (km)
-                </Text>
-                <View className="mb-4 flex flex-row items-center justify-between">
-                  {/* Min distance - disabled */}
-                  <TextInput
-                    className="w-[48%] rounded-lg bg-[#F6F6F6] p-3 font-NunitoRegular text-gray-400"
-                    placeholder="Min km"
-                    value={"0"}
-                    editable={false}
-                  />
-                  {/* Max distance - editable */}
-                  <TextInput
-                    className="w-[48%] rounded-lg bg-[#F6F6F6] p-3 font-NunitoRegular"
-                    placeholder="Max km"
-                    keyboardType="numeric"
-                    value={maxDistance}
-                    onChangeText={setMaxDistance}
-                  />
-                </View>
-              </View>
-
-              {/* Reset / Apply row */}
-              <View className="mt-4 flex-row  items-center justify-center">
-                <TouchableOpacity
-                  onPress={() => setIsVisible(false)}
-                  className="px-4 py-2 rounded-lg bg-primary-100"
-                >
-                  <Text className="text-white font-NunitoBold text-lg">
-                    Apply
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+      {category !== "Category" && (
+        <View>
+          <View className="mt-5 flex  flex-row items-center justify-between">
+            <Text className="font-RalewayBold text-2xl">
+              {category} Listings
+            </Text>
           </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+            <FlatList
+              data={listings}
+              keyExtractor={(item) => item.id}
+              renderItem={renderListings}
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.5}
+              scrollEnabled={true}
+              numColumns={2}
+              columnWrapperStyle={{ justifyContent: "space-between" }}
+              contentContainerStyle={{ paddingBottom: 140, paddingTop: 10 }}
+              ListFooterComponent={() =>
+                isLoading ? (
+                  <ActivityIndicator size="large" color="#004CFF" />
+                ) : isReachingEnd && listings?.length === 0  ? (
+                  <Text className="text-center font-NunitoRegular text-gray-400 my-4">
+                    No more listings
+                  </Text>
+                ) : null
+              }
+            />
+        </View>
+      )}
 
-      {category === "Category" ? (
+      {category === "Category" && (
         <View>
           <Text className="mt-5 self-center font-RalewayBold text-2xl">
             Please select a category
           </Text>
 
-          <View className="mt-5 flex flex-row flex-wrap justify-between gap-3">
-            {Data.map((data) => (
-              <View key={data.id} className="flex flex-col items-center">
-                <View className="rounded-xl bg-white p-3">{data.icon}</View>
-                <Text className="font-RalewayMedium text-lg">{data.title}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      ) : (
-        <View className="mt-8 flex-row flex-wrap  justify-between">
-          {Data1.map((item) => (
-            <View
-              key={item.id}
-              className="w-[32%] flex-row bg-primary-100/20 items-center p-2 rounded-lg mb-3"
-            >
-              {item.image}
-              <Text className="text-base font-NunitoMedium text-primary-100 ml-1">
-                {item.name}
-              </Text>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 140 }}
+          >
+            <View className="mt-5 flex  flex-wrap flex-row  ">
+              {(backendCategories || Data).map((data: any) => (
+                <TouchableOpacity
+                  key={data.id}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/(home)/category",
+                      params: {
+                        category: data.name || data.title,
+                        id: String(data.id),
+                        allCategories: JSON.stringify(backendCategories || []),
+                      },
+                    })
+                  }
+                  className="flex flex-col items-center w-[32%] mb-5"
+                >
+                  {/* If backend data, show icon from iconLib/iconName, else fallback to static icon */}
+                  {data.iconLib && data.iconName ? (
+                    <View className="rounded-xl bg-white p-3">
+                      {/* You can add more icon libraries as needed */}
+                      {data.iconLib === "Ionicons" ? (
+                        <Ionicons
+                          name={data.iconName}
+                          size={75}
+                          color={"#004CFF"}
+                        />
+                      ) : data.iconLib === "AntDesign" ? (
+                        <AntDesign
+                          name={data.iconName}
+                          size={75}
+                          color={"#004CFF"}
+                        />
+                      ) : data.iconLib === "Feather" ? (
+                        <Feather
+                          name={data.iconName}
+                          size={75}
+                          color={"#004CFF"}
+                        />
+                      ) : null}
+                    </View>
+                  ) : (
+                    <View className="rounded-xl bg-white p-3">{data.icon}</View>
+                  )}
+                  <Text className="font-RalewayMedium text-lg text-center">
+                    {data.name || data.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          ))}
+          </ScrollView>
         </View>
       )}
     </SafeAreaView>

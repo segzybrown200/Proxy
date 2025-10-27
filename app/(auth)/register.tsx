@@ -4,7 +4,6 @@ import {
   Image,
   Keyboard,
   Platform,
-  SafeAreaView,
   ScrollView,
   TextInput,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import {
   StatusBar,
   Modal,
   FlatList,
+  Alert,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import FormField from "../../components/FormFields";
@@ -28,6 +28,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import countryData from "../../assets/data/countries.json";
 import Apple from "../../assets/icons/Apple.svg"
 import Google from "../../assets/icons/Google.svg"
+import { createUser } from "api/api";
+import { pendingUserState } from "global/authSlice";
+import { showError } from "utils/toast";
 
 const SignUp = () => {
   const [isSubmitting, setisSubmitting] = useState(false);
@@ -45,7 +48,7 @@ const SignUp = () => {
     phone: yup
       .string()
       .required("Phone number is required")
-      .matches(/^\d{7,10}$/, "Phone number must be 7 to 10 digits"),
+      .matches(/^\d{10,10}$/, "Phone number must be 7 to 10 digits"),
     password: yup.string().min(6).required("Password must be filled"),
     confirmPassword: yup
       .string()
@@ -61,16 +64,45 @@ const SignUp = () => {
 
   const submit = (data: any) => {
     const FinalData = {
-      full_Name: data.name || data.fullName,
+      name: data.name || data.fullName,
       password: data.password,
       email: data.email,
       phone: `${selectedArea?.dial_code || ''}${data.phone}`,
-      country: selectedArea?.name?.common || selectedArea?.name || "",
     };
     setisSubmitting(true);
     Keyboard.dismiss();
-
-    router.push("/(auth)/verifyOptions");
+    createUser(FinalData).then((response) => {
+      setisSubmitting(false);
+      console.log("Registration successful:", response);
+      dispatch(pendingUserState({email: data.email, phone: FinalData.phone, password: data.password, pending: true}));
+      // router.push({pathname: "/(auth)/verifyOptions",
+      //   params: { email: data.email,phone: FinalData.phone },
+      // });
+      Alert.alert("Success", "Registration successful! Please verify your account.", [
+        {
+          text: "OK",
+          onPress: () => router.push({pathname: "/(auth)/verifyOptions",
+            params: { email: data.email,phone: FinalData.phone },
+          }),
+        },
+      ]);
+    }).catch((error) => {
+      setisSubmitting(false);
+      const errorMessage = error?.message || "An error occurred. Please try again.";
+      if(error?.code === "EMAIL_NOT_VERIFIED"){
+        showError("U haven't been verified your email. Please verify to proceed.");
+        setTimeout(() => {
+          router.push({pathname: "/(auth)/verifyOptions",
+            params: { email: error.details?.email,phone: error.details?.phone },
+          });
+        },2000)
+        return;
+      }else{
+        // Alert.alert("Error", errorMessage);
+        showError(errorMessage)
+        return;
+      }
+    });
   };
 
   // Normalize countries and set default selection (Nigeria if available)
