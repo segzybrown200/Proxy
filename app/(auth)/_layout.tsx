@@ -14,8 +14,6 @@ const _layout = () => {
         <Stack.Screen name='location' options={{ headerShown: false }} />
         <Stack.Screen name='verify-email' options={{ headerShown: false }} />
         <Stack.Screen name='congratulation' options={{ headerShown: false }} />
-        <Stack.Screen name='verify-reset-OTP' options={{ headerShown: false }} />
-        
     </Stack>
   )
 }

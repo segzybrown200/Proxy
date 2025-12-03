@@ -31,11 +31,25 @@ const authState = createSlice({
         },
         pendingUserLogout: (state) => {
             state.pendingUser = null;
+        },
+        updateUserState: (state, action: PayloadAction<{name?: string; email?: string; phone?: string}>) => {
+            if (state.user) {
+                state.user = {
+                    ...state.user,
+                    data: {
+                        ...(state.user as any).data,
+                        user: {
+                            ...(state.user as any).data.user,
+                            ...action.payload
+                        }
+                    }
+                };
+            }
         }
     },
 });
 
-export const { loginState, logoutState, VisitorState, pendingUserState,pendingUserLogout } = authState.actions;
+export const { loginState, logoutState, VisitorState, pendingUserState, pendingUserLogout, updateUserState } = authState.actions;
 export const selectUser = (state: RootState) => state.auth.user;
 export const selectIsVisitor = (state: RootState) => state.auth.isVisitor;
 export const selectPendingUser = (state: RootState) => state.auth.pendingUser;

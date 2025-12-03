@@ -53,18 +53,18 @@ export default function NetworkStatus() {
     <Modal visible={show} transparent animationType="slide">
       <View style={styles.overlay} pointerEvents="auto">
         <View style={styles.container}>
-          <Text style={styles.title}>{title}</Text>
+          <Text className="font-RalewaySemiBold text-lg" style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
 
           <View style={styles.buttons}>
             <TouchableOpacity style={[styles.button, styles.retry]} onPress={handleRetry}>
-              <Text style={styles.retryText}>Retry</Text>
+              <Text className="font-NunitoMedium" style={styles.retryText}>Retry</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.button, styles.proceed]} onPress={handleProceed}>
-              <Text style={styles.proceedText}>Proceed anyway</Text>
+              <Text className="font-RalewaySemiBold" style={styles.proceedText}>Proceed anyway</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.hint}>Detected: {isConnected ? (cellularGen ?? 'online') : 'offline'} {Platform.OS === 'ios' ? '(iOS)' : ''}</Text>
+          <Text className="font-NunitoRegular" style={styles.hint}>Detected: {isConnected ? (cellularGen ?? 'online') : 'offline'} {Platform.OS === 'ios' ? '(iOS)' : ''}</Text>
         </View>
       </View>
     </Modal>
@@ -83,7 +83,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     marginHorizontal: 8,
-    marginBottom: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.2,
@@ -91,12 +90,9 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "700",
     marginBottom: 8,
   },
   message: {
-    fontSize: 14,
     marginBottom: 12,
     color: "#333",
   },
@@ -120,15 +116,12 @@ const styles = StyleSheet.create({
   },
   retryText: {
     color: "#111",
-    fontWeight: "600",
   },
   proceedText: {
-    color: "#fff",
-    fontWeight: "700",
+    color: "#fff"
   },
   hint: {
     marginTop: 8,
-    fontSize: 12,
     color: "#666",
   },
 });

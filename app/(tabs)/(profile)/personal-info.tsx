@@ -1,9 +1,11 @@
-import React from "react";
 import { View, Text, TouchableOpacity, Image, SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useSelector } from "react-redux";
+import { selectUser } from "global/authSlice";
 
 export default function PersonalInfoScreen() {
+    const user:any = useSelector(selectUser)
   return (
     <SafeAreaView className="flex-1 bg-white p-5">
       {/* Header */}
@@ -26,8 +28,8 @@ export default function PersonalInfoScreen() {
           source={require("../../../assets/images/artist-2 2.png")}
           className="w-28 h-28 rounded-full"
         />
-        <Text className="text-lg font-RalewayBold mt-3">Segun Micah</Text>
-        <Text className="text-gray-500 font-NunitoRegular">segun@example.com</Text>
+        <Text className="text-lg font-RalewayBold mt-3">{user?.data?.user?.name}</Text>
+        <Text className="text-gray-500 font-NunitoRegular">{user?.data?.user?.email}</Text>
       </View>
 
       {/* Info Box */}
@@ -36,7 +38,7 @@ export default function PersonalInfoScreen() {
           <Ionicons name="person-outline" size={20} color="#FF7F50" />
           <View className="ml-3">
             <Text className="text-gray-500 font-RalewayRegular text-base">FULL NAME</Text>
-            <Text className="text-lg font-NunitoRegular">Ajayi Segun</Text>
+            <Text className="text-lg font-NunitoRegular">{user?.data?.user?.name}</Text>
           </View>
         </View>
 
@@ -44,7 +46,7 @@ export default function PersonalInfoScreen() {
           <Ionicons name="mail-outline" size={20} color="#004CFF" />
           <View className="ml-3">
             <Text className="text-gray-500 font-RalewayRegular text-base">EMAIL</Text>
-            <Text className="text-lg font-NunitoRegular">segun@gmail.com</Text>
+            <Text className="text-lg font-NunitoRegular">{user?.data?.user?.email}</Text>
           </View>
         </View>
 
@@ -52,7 +54,7 @@ export default function PersonalInfoScreen() {
           <Ionicons name="call-outline" size={20} color="#0096FF" />
           <View className="ml-3">
             <Text className="text-gray-500 font-RalewayRegular text-base">PHONE NUMBER</Text>
-            <Text className="text-lg font-NunitoRegular">+234 704 260 4550</Text>
+            <Text className="text-lg font-NunitoRegular">{user?.data?.user?.phone}</Text>
           </View>
         </View>
       </View>

@@ -1,15 +1,21 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, TextInput, Image, Alert, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Image, Alert, SafeAreaView, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { useSelector, useDispatch } from "react-redux";
+import { selectUser, updateUserState } from "global/authSlice";
+import { updateUser } from "../../../api/api";
 
 export default function EditProfileScreen() {
-  const [name, setName] = useState("Segun");
-  const [email, setEmail] = useState("segun@gmail.com");
-  const [phone, setPhone] = useState("+234 704 260 4550");
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser) as any;
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState(user?.data?.user?.name || "");
+  const [email, setEmail] = useState(user?.data?.user?.email || "");
+  const [phone, setPhone] = useState(user?.data?.user?.phone || "");
   const [profileImage, setProfileImage] = useState(require("../../../assets/images/artist-2 2.png"));
 
   const pickImage = async () => {
@@ -115,10 +121,46 @@ export default function EditProfileScreen() {
 
       {/* Save Button */}
       <TouchableOpacity
-        onPress={() => router.back()}
+        onPress={async () => {
+          try {
+            setLoading(true);
+            const token = user?.data?.token;
+            if (!token) {
+              Alert.alert("Error", "You need to be logged in to update your profile");
+              return;
+            }
+
+            // Only send fields that changed
+            const updates: any = {};
+            if (name !== user?.data?.user?.name) updates.name = name;
+            if (email !== user?.data?.user?.email) updates.email = email;
+            if (phone !== user?.data?.user?.phone) updates.phone = phone;
+
+            if (Object.keys(updates).length === 0) {
+              router.back();
+              return;
+            }
+
+            const result = await updateUser(updates, token);
+            // Update Redux store with the new user data
+            dispatch(updateUserState(updates));
+            Alert.alert("Success", "Profile updated successfully");
+            router.back();
+          } catch (error: any) {
+            const message = error?.message || 'Failed to update profile';
+            Alert.alert("Error", message);
+          } finally {
+            setLoading(false);
+          }
+        }}
         className="mt-16 bg-[#004CFF] rounded-xl py-4"
+        disabled={loading}
       >
-        <Text className="text-center text-white text-base font-NunitoBold">SAVE</Text>
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text className="text-center text-white text-base font-NunitoBold">SAVE</Text>
+        )}
       </TouchableOpacity>
     </SafeAreaView>
   );

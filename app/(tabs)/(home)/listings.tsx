@@ -4,10 +4,13 @@ import {
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
-  Image
+  ScrollView,
+  RefreshControl,
 } from "react-native";
+import { Image } from 'expo-image';
 import { TextInput } from "react-native";
 import React, { useState } from "react";
+import { formatCurrency } from "utils/currency";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Dashboard from "../../../assets/icons/Dashboard.svg";
 import { SearchComponent } from "../../../components/SearchInput";
@@ -37,8 +40,9 @@ const Data1 = [
 
 const Listings = () => {
     const {route} = useLocalSearchParams();
-    const {isLoading:NewListingsLoading, listings:NewListing, isError:NewError} = useNewListings();
-    const {isLoading:PopularIsLoading, popular:PopularListing, isError:PopularError} = usePopularListings();
+    const {isLoading:NewListingsLoading, listings:NewListing, isError:NewError, mutate: mutateNew} = useNewListings();
+    const {isLoading:PopularIsLoading, popular:PopularListing, isError:PopularError, mutate: mutatePopular} = usePopularListings();
+    const [refreshing, setRefreshing] = useState(false);
   return (
     <SafeAreaView className="flex-1 bg-[#sF9FAFB] p-4">
       <View className=" mt-5 flex flex-row items-center gap-4">
@@ -72,13 +76,32 @@ const Listings = () => {
           </View>
         ))}
       </View>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              try {
+                await Promise.all([mutateNew(), mutatePopular()]);
+              } catch (e) {
+                console.log("Refresh error:", e);
+              }
+              setRefreshing(false);
+            }}
+            colors={["#004CFF"]}
+            tintColor="#004CFF"
+          />
+        }
+      >
          <View className="flex flex-row flex-wrap justify-between gap-1">
             {(route === "Listings" ? NewListing?.data : PopularListing?.data)?.map((item:any)=>(
                      <TouchableOpacity key={item?.id} onPress={()=>router.push({pathname: "/(tabs)/(home)/details", params:{item: JSON.stringify(item)}})} className="mt-5 w-[49%] border border-primary-100 rounded-lg">
               <View className="w-full h-40 rounded-lg border-4 border-white shadow-2xl overflow-hidden">
                 <Image
                   source={{uri: item?.media?.find((media: any) => media.mimeType === 'image/jpeg')?.url || item?.media[0]?.url}}
-                  className="w-full h-full"
+                  style={{width: '100%', height: '100%'}}
+                  contentFit="cover"
                 />
               </View>
               <View>
@@ -91,7 +114,7 @@ const Listings = () => {
                   </TouchableOpacity>
                 </View>
                 <Text className="text-[30px] p-1 font-RalewayExtraBold text-textColor-100 ">
-                  {item?.price}
+                  {formatCurrency(item?.price)}
                 </Text>
 
                 <View className="relative p-2 mt-2 mb-5">
@@ -109,6 +132,7 @@ const Listings = () => {
             </TouchableOpacity>
             ))}
           </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };

@@ -8,10 +8,21 @@ interface Props {
   otherStyles?: string;
   placeholderTextColor?: string;
   white?: string;
+  value?: string;
+  onChangeText?: (text: string) => void;
+  onSubmitEditing?: () => void;
 }
 
 
-export const SearchComponent:React.FC<Props> = ({otherStyles, placeholder,placeholderTextColor,white}) => {
+export const SearchComponent:React.FC<Props> = ({
+  otherStyles,
+  placeholder,
+  placeholderTextColor,
+  white,
+  value,
+  onChangeText,
+  onSubmitEditing
+}) => {
   return (
     <View className={`w-full bg-[#F0F0F0] ${white === "yes" ? "bg-white" : null}  px-4 py-1.5  rounded-3xl  flex flex-row items-center ${otherStyles}`}>
       {/* text Input */}
@@ -20,11 +31,12 @@ export const SearchComponent:React.FC<Props> = ({otherStyles, placeholder,placeh
         placeholder={placeholder}
         placeholderTextColor={placeholderTextColor || "#C4C4C4"}
         underlineColorAndroid="transparent"
+        value={value}
+        onChangeText={onChangeText}
+        onSubmitEditing={onSubmitEditing}
+        returnKeyType="search"
       />
       <FontAwesome name="search" size={24} color="black" />
-
-
-
     </View>
   )
 }

@@ -73,7 +73,6 @@ const SignUp = () => {
     Keyboard.dismiss();
     createUser(FinalData).then((response) => {
       setisSubmitting(false);
-      console.log("Registration successful:", response);
       dispatch(pendingUserState({email: data.email, phone: FinalData.phone, password: data.password, pending: true}));
       // router.push({pathname: "/(auth)/verifyOptions",
       //   params: { email: data.email,phone: FinalData.phone },

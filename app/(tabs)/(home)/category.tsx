@@ -2,19 +2,15 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Modal,
-  TouchableWithoutFeedback,
   ScrollView,
-  Image,
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { TextInput } from "react-native";
+import { Image } from 'expo-image';
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Dashboard from "../../../assets/icons/Dashboard.svg";
 import { SearchComponent } from "../../../components/SearchInput";
-import Filter from "../../../assets/icons/filter.svg";
 import Electronic from "../../../assets/icons/Electronics.svg";
 import Fashion from "../../../assets/icons/Fashion.svg";
 import Services from "../../../assets/icons/handshake 1.svg";
@@ -42,19 +38,6 @@ const categories = [
   "Sports",
   "Toys",
   "Books",
-];
-const condition = ["Brand New", "Used", "Refurbuished"];
-
-const Data1 = [
-  {
-    id: "1",
-    name: "Electronics",
-    image: <Electronic width={25} height={25} />,
-  },
-  { id: "3", name: "AutoMobile", image: <Automobile width={25} height={25} /> },
-  { id: "4", name: "Drugs", image: <Drugs width={25} height={25} /> },
-  { id: "2", name: "Fashion", image: <Fashion width={25} height={25} /> },
-  { id: "5", name: "Beauty", image: <Beauty width={25} height={25} /> },
 ];
 
 const category = () => {
@@ -86,7 +69,9 @@ const category = () => {
       <TouchableOpacity onPress={()=>router.push({pathname:"/(tabs)/(home)/details", params:{item:JSON.stringify(item)}})} className="mt-5 w-[49%] border border-primary-100 rounded-lg">
           <Image
             source={{uri: item?.media[0]?.url}}
-            className=" w-full h-40 rounded-lg border-4 border-white shadow-2xl"
+            style={{width: '100%', height: 160}}
+            className="rounded-lg border-4 border-white shadow-2xl"
+            contentFit="cover"
           />
           <View>
             <View className="p-1 flex-row justify-between items-start">

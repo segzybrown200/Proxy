@@ -87,3 +87,209 @@ export const SearchListings = async(categoryId:string, cursor:string ) => {
     throw error.response?.data || error;
   })
 }
+export const searchListings = async(params: Record<string, any>) => {
+  return api.get(`/listings/search`, {
+    params,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+export const markMessagesAsRead = async(senderId: string, token: string) => {
+  return api.post("/messages/read", { senderId }, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+export const getAllMessages = async(token:string) => {
+  return api.get(`/messages/messages/chats`,
+        {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }}
+  ).catch((error) => {
+    throw error.response?.data || error;
+  })
+}
+
+export const orderPlaced = async(data:any,reference:string, token:string) => {
+  return api.post(`/vendor/create-delivery?reference=${reference}`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+export const getUserAuth = async(token:string) => {
+  return api.get(`/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+// Create a Stripe PaymentIntent on the server.
+// The backend should implement an endpoint that accepts { amount, currency }
+// and returns { clientSecret } (the PaymentIntent client_secret).
+export const createStripePaymentIntent = async(data:any, token?:string) => {
+  return api.post(`/payments/create-payment-intent`, data, {
+    headers: token
+      ? { Authorization: `Bearer ${token}` }
+      : undefined,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const updateUser = async(data: {name?: string, email?: string, phone?: string}, token: string) => {
+  return api.put('/auth/user/update', data, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const getOrders = async(token:string) => {
+  return api.get("/listings/get-user-order", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const registerRider = async(data:any, token:string) => {
+  return api.post("/rider/register", data, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const riderKYCUpload = async(data:any, token:string, onUploadProgress?: (percent: number) => void) => {
+  return api.post("/rider/kyc/upload", data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-type": 'multipart/form-data'
+    },
+    onUploadProgress: (progressEvent: any) => {
+      try {
+        const { loaded, total } = progressEvent;
+        if (total) {
+          const percent = Math.round((loaded * 100) / total);
+          if (onUploadProgress) onUploadProgress(percent);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const riderVechicleUpload = async(data:any, token:string, onUploadProgress?: (percent: number) => void) => {
+  return api.post("/rider/vehicle", data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-type": 'multipart/form-data'
+    },
+    onUploadProgress: (progressEvent: any) => {
+      try {
+        const { loaded, total } = progressEvent;
+        if (total) {
+          const percent = Math.round((loaded * 100) / total);
+          if (onUploadProgress) onUploadProgress(percent);
+        }
+      } catch (e) {
+        // ignore progress errors
+      }
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+export const getRiderStatus = async(token:string) => {
+  return api.get("/rider/me", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const getRiderHistory = async(token:string) => {
+  return api.get("/rider/history", {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  })
+}
+export const getActiveDeliveries = async(token:string) => {
+  return api.get("/rider/active-deliveries", {
+    headers: {
+       Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  })
+}
+export const markedPickup = async(token:string, deliveryId:string) => {
+  return api.post(`/rider/pickup/${deliveryId}`, {}, {
+    headers: {
+       Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  })
+}
+export const startTransitDelivery = async(token:string, deliveryId:string) => {
+  return api.post(`/rider/start-pickup/${deliveryId}`, {}, {
+    headers: {
+       Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  })
+}
+export const completeOrder = async(token:string, deliveryId:string, otp:string) => {
+  return api.post(`/rider/complete-delivery/${deliveryId}`, {otp}, {
+    headers: {
+       Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  })
+}
+export const getSingleDeliveryOrder = async(token:string, deliveryId:string) => {
+  return api.get(`/rider/delivery/${deliveryId}`, {
+    headers: {
+       Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  })
+}
+
+export const completeOrderWithOTP = async(token:string, deliveryId:string, otp:string) => {
+  return api.post(`/rider/complete-delivery/${deliveryId}`, { otp }, {
+    headers: {
+       Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  })
+}

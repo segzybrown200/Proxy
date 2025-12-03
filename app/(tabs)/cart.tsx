@@ -2,14 +2,16 @@ import React from "react";
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
   Alert,
+  RefreshControl,
 } from "react-native";
+import { Image } from 'expo-image';
 import { useSelector, useDispatch } from "react-redux";
 import { selectCartItems, selectCartTotal, increaseQuantity, decreaseQuantity, removeFromCart } from "global/listingSlice";
+import { formatCurrency } from "utils/currency";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import CustomButton from "components/CustomButton";
@@ -20,6 +22,7 @@ const CartScreen = () => {
   const total = useSelector(selectCartTotal);
   const dispatch = useDispatch();
   const select = useSelector(selectIsVisitor);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   if (cartItems.length === 0) {
     return (
@@ -61,6 +64,17 @@ const CartScreen = () => {
       {/* Cart List */}
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              setTimeout(() => setRefreshing(false), 1000);
+            }}
+            colors={["#004CFF"]}
+            tintColor="#004CFF"
+          />
+        }
       >
         {cartItems.map((item:any) => (
           <View
@@ -69,8 +83,9 @@ const CartScreen = () => {
           >
             <Image
               source={{uri: item.media?.[0]?.url}}
-              className="w-20 h-20 rounded-xl"
-              resizeMode="cover"
+              style={{width: 80, height: 80}}
+              className="rounded-xl"
+              contentFit="cover"
             />
 
             <View className="flex-1 ml-4">
@@ -79,7 +94,7 @@ const CartScreen = () => {
                 {/* Add variant or other info if needed */}
               </Text>
               <Text className="font-NunitoBold text-lg mt-1">
-                ₦{item.price.toLocaleString()}
+                {formatCurrency(item.price)}
               </Text>
             </View>
 
@@ -118,7 +133,7 @@ const CartScreen = () => {
             Total
           </Text>
           <Text className="text-2xl font-NunitoBold text-[#0056FF]">
-            ₦{total.toLocaleString()}
+            {formatCurrency(total)}
           </Text>
         </View>
 

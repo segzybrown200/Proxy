@@ -1,4 +1,4 @@
-import { getCategory, getConversions, getNewListings, getPopularListings } from "api/api"
+import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getNewListings, getOrders, getPopularListings, getRiderHistory, getRiderStatus, getSingleDeliveryOrder } from "api/api"
 import axios from "axios";
 import useSWR  from "swr"
 import { SWRConfiguration } from "swr"
@@ -62,6 +62,32 @@ export const useCategoryListings = ( categoryId: string) => {
   };
 };
 
+export const useSearchListings = (params: Record<string, any> | null) => {
+  const fetcher = async (key: string) => {
+    // key is the serialized params string, but we'll call API directly with params
+    const searchParams = params || {};
+    const res = await (await import("../api/api")).searchListings(searchParams);
+    return res.data;
+  };
+
+  // Build SWR key based on serialized params so it revalidates when filters change
+  const key = params ? `/listings/search?${Object.keys(params)
+    .filter(k => params[k] !== undefined && params[k] !== null && params[k] !== "")
+    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
+    .join("&")}` : null;
+
+  const { data, error, isLoading, mutate }: any = useSWR(key, fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  return {
+    listings: data?.data || [],
+    isLoading,
+    isError: !!error,
+    mutate,
+  };
+};
+
 export const usePopularListings = ()=>{
     const fetcher = getPopularListings;
 
@@ -110,14 +136,137 @@ export const useGetConversions = (id:string, token:string)=>{
     token ? `/messages/${id}` : null,
     ()=>fetcher(id,token),
     {
-      revalidateOnFocus: false,
+      revalidateOnFocus: true,
       revalidateOnReconnect: true,
       revalidateOnMount: true, // Ensure it fetches when the component 
-      refreshInterval: 30000, // Refresh every 30 seconds
+      refreshInterval: 10000, // Refresh every 30 seconds
     }
   );
     return {
         messages: data?.data || [],
+        isLoading,
+        isError: error,
+        mutate,
+    };
+
+}
+export const useMessages = (token:string)=>{
+    const fetcher = (token:string) => getAllMessages(token);
+
+    const { data, error, isLoading ,mutate} = useSWR(
+    token ? `/messages/messages/chats` : null,
+    ()=>fetcher(token),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true, // Ensure it fetches when the component 
+    }
+  );
+    return {
+        messages: data?.data || [],
+        isLoading,
+        isError: error,
+        mutate,
+    };
+
+}
+export const useRider = (token:string)=>{
+    const fetcher = (token:string) => getRiderStatus(token);
+
+    const { data, error, isLoading ,mutate} = useSWR(
+    token ? `/rider/me` : null,
+    ()=>fetcher(token),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true, // Ensure it fetches when the component 
+    }
+  );
+    return {
+        rider: data?.data || [],
+        isLoading,
+        isError: error,
+        mutate,
+    };
+
+}
+export const useUserOrder = (token:string)=>{
+    const fetcher = (token:string) => getOrders(token);
+
+    const { data, error, isLoading ,mutate} = useSWR(
+    token ? `/listings/get-user-order` : null,
+    ()=>fetcher(token),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true, // Ensure it fetches when the component 
+    }
+  );
+  console.log(data?.data)
+    return {
+        order: data?.data || [],
+        isLoading,
+        isError: error,
+        mutate,
+    };
+
+}
+export const useRiderHistory = (token:string)=>{
+    const fetcher = (token:string) => getRiderHistory(token);
+
+    const { data, error, isLoading ,mutate} = useSWR(
+    token ? `/rider/history` : null,
+    ()=>fetcher(token,),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true, // Ensure it fetches when the component 
+    }
+  );
+    return {
+        history: data?.data || [],
+        isLoading,
+        isError: error,
+        mutate,
+    };
+
+}
+export const useRiderActiveOrder = (token:string)=>{
+    const fetcher = (token:string) => getActiveDeliveries(token);
+
+    const { data, error, isLoading ,mutate} = useSWR(
+    token ? `/rider/active-deliveries` : null,
+    ()=>fetcher(token,),
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true, // Ensure it fetches when the component 
+      refreshInterval: 30000
+    }
+  );
+    return {
+        active: data?.data || [],
+        isLoading,
+        isError: error,
+        mutate,
+    };
+
+}
+export const useSingleOrder = (token:string, id:string)=>{
+    const fetcher = (token:string, id:string) => getSingleDeliveryOrder(token, id);
+
+    const { data, error, isLoading ,mutate} = useSWR(
+    token ? `rider/delivery/${id}` : null,
+    ()=>fetcher(token, id),
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true, // Ensure it fetches when the component 
+      refreshInterval: 10000
+    }
+  );
+    return {
+        delivery: data?.data || [],
         isLoading,
         isError: error,
         mutate,

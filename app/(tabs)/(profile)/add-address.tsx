@@ -22,13 +22,18 @@ type Suggestion = {
   description: string
 }
 
+
+type AddressCoords = {
+  latitude?: number;
+  longitude?: number;
+};
+
 const AddAddress = () => {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [coords, setCoords] = useState<AddressCoords>({});
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
-
-
 
   useEffect(() => {
     if (!query) {
@@ -75,9 +80,27 @@ const AddAddress = () => {
   }
 
   const selectSuggestion = async (s: Suggestion) => {
-    // You can fetch place details if you need coordinates using the place_id
-    setQuery(s.description)
-    setSuggestions([])
+    // Fetch place details to get coordinates
+    try {
+      setLoading(true);
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${s.place_id}&key=${GOOGLE_PLACES_API_KEY}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.status === 'OK' && json.result && json.result.geometry && json.result.geometry.location) {
+        setCoords({
+          latitude: json.result.geometry.location.lat,
+          longitude: json.result.geometry.location.lng,
+        });
+      } else {
+        setCoords({});
+      }
+    } catch (e) {
+      setCoords({});
+    } finally {
+      setQuery(s.description);
+      setSuggestions([]);
+      setLoading(false);
+    }
   }
 
   const saveAddress = async () => {
@@ -90,7 +113,13 @@ const AddAddress = () => {
       const key = 'addresses'
       const raw = await AsyncStorage.getItem(key)
       const existing: Array<any> = raw ? JSON.parse(raw) : []
-      const newEntry = { id: Date.now().toString(), address: query.trim(), createdAt: new Date().toISOString() }
+      const newEntry = {
+        id: Date.now().toString(),
+        address: query.trim(),
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        createdAt: new Date().toISOString(),
+      }
       const updated = [newEntry, ...existing]
       await AsyncStorage.setItem(key, JSON.stringify(updated))
       // navigate back to address list — it will read AsyncStorage on mount
@@ -126,6 +155,7 @@ const AddAddress = () => {
       }
 
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest })
+      setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
       const rev = await Location.reverseGeocodeAsync(pos.coords)
       if (rev && rev.length > 0) {
         const r = rev[0]

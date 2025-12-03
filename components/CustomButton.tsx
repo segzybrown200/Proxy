@@ -24,13 +24,13 @@ const CustomButton:React.FC<IData> = ({
     <TouchableOpacity
       onPress={handlePress || handlePress1}
       activeOpacity={0.7}
-      className={`bg-primary-100 w-full rounded-xl min-h-[62px] flex flex-row justify-center items-center ${containerStyles} ${
+      className={`bg-primary-100 w-full rounded-xl min-h-[52px] flex flex-row justify-center items-center ${containerStyles} ${
         isLoading ? "opacity-50" : ""
       }`}
       disabled={isLoading || disabled}
       
     >
-      <Text className={`text-white font-NunitoLight text-2xl ${textStyles}`}>
+      <Text className={`text-white  font-RalewayBold text-lg ${textStyles}`}>
         {title}
       </Text>
 

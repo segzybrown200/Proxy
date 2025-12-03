@@ -2,7 +2,6 @@
     import {
       View,
       Text,
-      Image,
       TouchableOpacity,
       SafeAreaView,
       ScrollView,
@@ -10,9 +9,11 @@
       NativeSyntheticEvent,
       NativeScrollEvent,
     } from 'react-native';
-    import { useLocalSearchParams, router } from 'expo-router';
+    import { Image } from 'expo-image';
+    import { useLocalSearchParams,  useRouter } from 'expo-router';
     import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
+import { formatCurrency } from 'utils/currency';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, selectCartItems, increaseQuantity, decreaseQuantity } from 'global/listingSlice';
 import { selectUser } from 'global/authSlice';
@@ -21,6 +22,7 @@ import { selectUser } from 'global/authSlice';
     const CAROUSEL_HEIGHT = 300;
 
     const Details = () => {
+      const router = useRouter();
       const dispatch = useDispatch();
       const cartItems = useSelector(selectCartItems);
       const selector:any = useSelector(selectUser)
@@ -31,10 +33,14 @@ import { selectUser } from 'global/authSlice';
       const [quantity, setQuantity] = useState(1);
       const {item}:any = useLocalSearchParams()
 
+
+    
+
   const parseItems = JSON.parse(item)
   const cartItem = cartItems.find((ci:any) => ci.id === parseItems.id);
 
     const user = selector?.data?.user
+
 
       
 
@@ -58,13 +64,13 @@ import { selectUser } from 'global/authSlice';
               onMomentumScrollEnd={onMomentumScrollEnd}
               style={{ width: SCREEN_WIDTH, height: CAROUSEL_HEIGHT }}>
               {parseItems?.media
-                ?.filter((img: any) => !parseItems.isDigital || img.mimeType === 'image/jpeg')
+                ?.filter((img: any) => !parseItems.isDigital || img.mimeType === 'image/jpeg' )
                 .map((img:any) => (
                   <Image
                     key={img.id}
                     source={{uri:img.url}}
                     style={{ width: SCREEN_WIDTH, height: CAROUSEL_HEIGHT }}
-                    resizeMode="cover"
+                    contentFit="cover"
                   />
                 ))}
             </ScrollView>
@@ -83,7 +89,7 @@ import { selectUser } from 'global/authSlice';
             <View className="absolute left-0 right-0 -bottom-7 flex-row justify-center items-center">
               {parseItems?.media
                 ?.filter((img: any) => !parseItems.isDigital || img.mimeType === 'image/jpeg')
-                .map((i:any, inx:any) => (
+                .map((i:any, inx:number) => (
                   <View
                     key={i?.id || inx}
                     style={{
@@ -91,7 +97,7 @@ import { selectUser } from 'global/authSlice';
                       height: 8,
                       borderRadius: 4,
                       marginHorizontal: 4,
-                      backgroundColor: i.id || inx === activeIndex ? '#2563EB' : '#E5E7EB',
+                      backgroundColor: i.id || inx === activeIndex ? '#2563EB' : '#D1D5DB',
                     }}
                   />
                 ))}
@@ -145,15 +151,14 @@ import { selectUser } from 'global/authSlice';
 
               <View className="mt-6 flex-row items-center  justify-between">
                 <View className="flex-row items-center relative ">
-                  <View className='bottom-0 z-30 righ-8 absolute rounded-full bg-green-500 border border-white p-1'/>
-                  <Image source={{uri:parseItems?.seller?.kycDocument.selfieUrl}} className="w-12 h-12 rounded-full" />
+                  <Image source={{uri:parseItems?.seller?.kycDocument?.selfieUrl}} style={{width: 48, height: 48, borderRadius: 100}} className="rounded-full" contentFit="cover" />
                   <View className="ml-3">
                     <Text className="font-NunitoSemiBold text-lg">Vendor Profile</Text>
                     <Text className="text-sm text-gray-500 font-NunitoRegular">Name: {parseItems?.seller.name}</Text>
                     <Text className="text-sm font-NunitoRegular text-gray-500">Phone.No {parseItems?.seller.phone}</Text>
                   </View>
                 </View>
-                <TouchableOpacity onPress={()=>router.push({pathname: "/(tabs)/(profile)/chat", params: {seller: JSON.stringify(parseItems), user: JSON.stringify(user) }})} className="bg-primary-100 px-3 py-2 rounded-md">
+                <TouchableOpacity onPress={()=>router.replace({pathname: "/(tabs)/(profile)/chat", params: {seller: JSON.stringify(parseItems), user: JSON.stringify(user) }})} className="bg-primary-100 px-3 py-2 rounded-md">
                   <Text className="text-white font-NunitoSemiBold">Start Chat</Text>
                 </TouchableOpacity>
               </View>
@@ -164,7 +169,7 @@ import { selectUser } from 'global/authSlice';
           <View className="absolute left-0 right-0 bottom-6 bg-white px-4 py-4 border-t border-gray-100 flex-row items-center justify-between">
             <View>
               <Text className="text-gray-500 font-RalewayMedium">Price</Text>
-              <Text className="text-2xl font-RalewayBold mt-1 ">{parseItems?.price}</Text>
+              <Text className="text-2xl font-RalewayBold mt-1 ">{formatCurrency(parseItems?.price)}</Text>
             </View>
             {cartItem ? (
               <View className="flex-row items-center bg-white rounded-lg">

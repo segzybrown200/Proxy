@@ -43,6 +43,7 @@ const AddressList = () => {
     }, [])
   )
 
+
   return (
     <SafeAreaView className="flex-1 bg-white p-5">
       <View className="flex-row items-center mt-14">

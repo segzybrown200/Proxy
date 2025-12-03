@@ -1,164 +1,308 @@
-import React from 'react'
-import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import MapView, { Marker } from 'react-native-maps'
-import { router, useLocalSearchParams } from 'expo-router'
+import React, { useEffect, useRef, useState } from "react";
+import { formatCurrency } from "utils/currency";
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+  FlatList,
+  Image,
+  Linking,
+  Animated,
+} from "react-native";
+import MapView, { Marker, Polyline } from "react-native-maps";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { router, useLocalSearchParams } from "expo-router";
+import io from "socket.io-client";
 
-export default function TrackOrderScreen() {
-  const params = useLocalSearchParams()
-  const { orderId, orderPosition, orderQuantity, orderDate, address } = params as {
-    orderId?: string
-    orderPosition?: string
-    orderQuantity?: string
-    orderDate?: string
-    address?: string
+const socket = io("https://proxy-backend-6of2.onrender.com");
+
+const TrackOrderScreen = () => {
+  const { order } = useLocalSearchParams();
+  const parsedOrder = JSON.parse(order as string);
+  const mapRef = useRef<MapView>(null);
+
+  const [riderLocation, setRiderLocation] = useState<any>(null);
+  const [currentStatus, setCurrentStatus] = useState(parsedOrder.delivery?.status || "PENDING");
+  // const [riderInfo, setRiderInfo] = useState<any>(null);
+
+  const riderInfo = parsedOrder?.delivery?.rider
+
+  console.log(order)
+
+
+
+
+  // console.log(parsedOrder.delivery)
+
+  const delivery = parsedOrder.delivery;
+  const isDigital = parsedOrder.isDigital;
+
+  // Animate marker smoothly
+  const riderAnim = useRef(new Animated.ValueXY()).current;
+
+  console.log(parsedOrder.digitalFiles)
+
+  useEffect(() => {
+    if (!delivery?.id) return;
+
+    socket.on("delivery_location_update", (data) => {
+      if (data?.deliveryId === delivery.id) {
+        const newLocation = { latitude: data.lat, longitude: data.lng };
+        console.log(newLocation)
+        setRiderLocation(newLocation);
+        Animated.timing(riderAnim, {
+          toValue: { x: data.lat, y: data.lng },
+          duration: 800,
+          useNativeDriver: false,
+        }).start();
+      }
+    });
+
+    socket.on("delivery_status_update", (data) => {
+      if (data?.deliveryId === delivery.id) {
+        setCurrentStatus(data.status);
+      }
+    });
+
+    // socket.on("rider_assigned", (data) => {
+    //   if (data?.deliveryId === delivery.id) {
+    //     setRiderInfo(data.rider);
+    //   }
+    // });
+
+    return () => {
+      socket.off("delivery_location_update");
+      socket.off("delivery_status_update");
+      socket.off("rider_assigned");
+    };
+  }, [delivery]);
+
+  // ✅ DIGITAL DELIVERY
+  if (isDigital) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50 p-5">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="bg-[#ECF0F4] rounded-full mt-10 p-2 mb-3 w-10"
+        >
+          <Ionicons name="chevron-back" size={24} color="black" />
+        </TouchableOpacity>
+
+        <Text className="text-2xl font-NunitoBold mb-3">Digital Delivery</Text>
+        <Text className="text-gray-500 font-NunitoMedium mb-6">
+          Your purchased files are ready below.
+        </Text>
+
+        {parsedOrder?.digitalFiles?.length ? (
+          parsedOrder.digitalFiles.map((file: any) => (
+            <TouchableOpacity
+              key={file.id}
+              onPress={() => Linking.openURL(file.url)}
+              className="mb-4 bg-white rounded-xl shadow p-4 flex-row justify-between items-center"
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="document-text-outline" size={22} color="#004CFF" />
+                <Text className="text-primary-100 font-NunitoSemiBold ml-2">
+                  {file.name || "Download File"}
+                </Text>
+              </View>
+              <Ionicons name="download-outline" size={22} color="#004CFF" />
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text className="text-gray-400 font-NunitoMedium">No files available.</Text>
+        )}
+
+        <View className="mt-6 bg-white p-5 rounded-2xl shadow-sm">
+          <Text className="text-xl font-NunitoBold mb-2">Order Summary</Text>
+          <Text className="text-gray-600">Order ID: {parsedOrder.id}</Text>
+          <Text className="text-gray-600 mt-2">
+            Total: {formatCurrency(parsedOrder.transaction.amountPaid, "NGN", "Nigerian Naira")}
+          </Text>
+          <Text className="text-gray-500 mt-2">
+            Date: {new Date(parsedOrder.createdAt).toLocaleString()}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
-  const item = {
-    title: 'Nike Sneaker',
-    thumbnail: require('../../../assets/images/sneaker.png'),
+  // ✅ PHYSICAL DELIVERY
+  const pickup = {
+    latitude: Number(delivery?.pickupLat) || 0,
+    longitude: Number(delivery?.pickupLng) || 0,
+  };
+  const dropoff = {
+    latitude: Number(delivery?.dropoffLat) || 0,
+    longitude: Number(delivery?.dropoffLng) || 0,
+  };
+  const riderCords = {
+    latitude: Number(parsedOrder.delivery?.rider?.currentLat) || 0,
+    longitude: Number(parsedOrder.delivery?.rider?.currentLng) || 0,
   }
-
-  // If no order params provided, generate a random sample order
-  const randomOrder = React.useMemo(() => {
-    const id = Math.floor(1000 + Math.random() * 9000).toString()
-    const qty = Math.floor(1 + Math.random() * 3).toString()
-    const pos = Math.floor(Math.random() * 5).toString()
-    const date = new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 3600 * 1000).toLocaleDateString()
-    const addr = '24 Church Rd, Surulere, Lagos'
-    return { id, qty, pos, date, addr }
-  }, [])
-
-  const finalOrderId = orderId ?? randomOrder.id
-  const finalOrderQuantity = orderQuantity ?? randomOrder.qty
-  const finalOrderPosition = orderPosition ?? randomOrder.pos
-  const finalOrderDate = orderDate ?? randomOrder.date
-  const finalAddress = address ?? randomOrder.addr
+  const statusSteps = ["PENDING","ACCEPTED", "PICKED_UP", "IN_TRANSIT", "DELIVERED"];
+  const activeIndex = statusSteps.indexOf(currentStatus);
+  
+  // Show fullscreen map during active delivery
+  const isActiveDelivery = currentStatus === "PICKED_UP" || currentStatus === "IN_TRANSIT";
+  console.log(pickup)
+  console.log(riderCords)
 
   return (
-    <View className="flex-1 bg-white px-4 pt-10">
-      {/* Header */}
-      <View className="flex-row items-center mb-10 mt-10">
-        <TouchableOpacity className="mr-3 bg-gray-200 p-2 rounded-full" onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={26} color="black" />
-        </TouchableOpacity>
-        <Text className="text-2xl font-NunitoBold">Track Order</Text>
+    <SafeAreaView className="flex-1 bg-white">
+      {/* Header - Hidden during fullscreen map */}
+      {!isActiveDelivery && (
+        <View className="flex-row items-center mt-7 px-4 pt-4 pb-3 border-b border-gray-200">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="bg-[#ECF0F4] rounded-full p-2 mr-3"
+          >
+            <Ionicons name="chevron-back" size={24} color="black" />
+          </TouchableOpacity>
+          <Text className="text-2xl font-NunitoBold">Track Order</Text>
+        </View>
+      )}
+
+      {/* Map Container */}
+      <View className={isActiveDelivery ? "flex-1" : "h-72"}>
+        <MapView
+          ref={mapRef}
+          style={{ flex: 1 }}
+          initialRegion={{
+            latitude: pickup.latitude || 0,
+            longitude: pickup.longitude || 0,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+          onMapReady={() => {
+            if (mapRef.current) {
+              mapRef.current.fitToCoordinates([pickup, dropoff], {
+                edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
+                animated: true,
+              });
+            }
+          }}
+        >
+          <Marker coordinate={pickup} title="Pickup" pinColor="blue" />
+          <Marker coordinate={dropoff} title="Dropoff" pinColor="green" />
+          {riderLocation && (
+            <Marker coordinate={riderLocation || riderCords} title="Rider" pinColor="red" />
+          )}
+          <Polyline
+            coordinates={[
+              pickup,
+              ...(riderLocation ? [riderLocation] : []),
+              dropoff,
+            ]}
+            strokeColor="#004CFF"
+            strokeWidth={4}
+          />
+        </MapView>
       </View>
 
-      <ScrollView className="p-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      {/* Order status and details - Hidden during fullscreen map */}
+       
+      <View className="flex-1 overflow-hidden bg-white border-t border-gray-200">
+        <View className="flex-row justify-between mb-4 p-5">
+          {statusSteps.map((step, index) => (
+            <View key={step} className="items-center flex-1">
+              <View
+                className={`w-8 h-8 rounded-full border-2 ${
+                  index <= activeIndex
+                    ? "bg-blue-600 border-blue-600"
+                    : "border-gray-300"
+                }`}
+              />
+              <Text
+                className={`text-xs mt-1 ${
+                  index <= activeIndex
+                    ? "text-blue-600 font-NunitoBold"
+                    : "text-gray-400"
+                }`}
+              >
+                {step.replace("_", " ")}
+              </Text>
+            </View>
+          ))}
+        </View>
 
-        {/* Order Summary (optional) */}
-        <View className="bg-white rounded-lg p-4 mb-4 shadow-sm">
-            <View className="flex-row items-center">
-              <Image source={item.thumbnail} className="w-16 h-16 rounded-md mr-3" />
-              <View style={{ flex: 1 }}>
-                <Text className="text-lg font-NunitoSemiBold">{item.title}</Text>
-                <Text className="text-base font-NunitoRegular text-primary-100 mt-1">Order #{finalOrderId}</Text>
-                {finalOrderDate ? <Text className="text-sm font-NunitoRegular text-gray-400">{finalOrderDate}</Text> : null}
+        <ScrollView className="flex-1 px-5">
+          {riderInfo && (
+            <View className="flex-row items-center mb-6 mt-2">
+              <Image
+                source={{
+                  uri:
+                    riderInfo?.kyc?.selfieUrl ||
+                    "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                }}
+                className="w-12 h-12 rounded-full mr-3"
+              />
+              <View className="flex-1">
+                <Text className="font-NunitoBold text-black text-lg">
+                  {riderInfo?.fullName}
+                </Text>
+                <Text className="font-NunitoMedium text-gray-500">
+                  {riderInfo.vehicleType || "Bike"}
+                </Text>
+                <View className="flex flex-row gap-3">
+                   <Text className="font-NunitoMedium text-gray-500">
+                  {riderInfo?.vehicle?.model}
+                </Text>
+                   <Text className="font-NunitoMedium text-gray-500">
+                  {riderInfo?.vehicle?.plateNumber}
+                </Text>
+                </View>
+               
               </View>
-              <View className="items-end">
-                <Text className="text-sm text-gray-500 font-NunitoRegular">Qty</Text>
-                <Text className="text-xl text-primary-100 font-RalewaySemiBold">{finalOrderQuantity ?? '1'}</Text>
+              <TouchableOpacity
+                onPress={() => Linking.openURL(`tel:${riderInfo.phone}`)}
+                className="bg-primary-100 px-3 py-3 rounded-full"
+              >
+                <Ionicons name="call-outline" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Order Details */}
+          {parsedOrder.listings?.map((item: any) => (
+            <View key={item.id} className="flex-row items-center mb-3">
+              <Image
+                source={{
+                  uri: item.image || "https://via.placeholder.com/80",
+                }}
+                className="w-12 h-12 rounded-md mr-3"
+              />
+              <View className="flex-1">
+                <Text className="font-NunitoSemiBold text-black">
+                  {item.title}
+                </Text>
+                <Text className="text-gray-500 font-NunitoMedium">
+                  ₦{item.price.toLocaleString()} x {item.quantity}
+                </Text>
               </View>
             </View>
-
-            <View className="mt-3">
-              <Text className="text-base font-RalewayMedium text-gray-500">Delivery address</Text>
-              <Text className="text-lg text-primary-100 font-NunitoMedium mt-1">{finalAddress}</Text>
-            </View>
-
-            <View className="mt-3 items-start">
-              <Text className="text-base font-RalewaySemiBold text-gray-400">Current status</Text>
-              <Text className="text-base font-NunitoSemiBold text-primary-100 mt-1">
-                {['Ordered', 'Packed', 'Shipped', 'Out for delivery', 'Delivered'][Math.max(0, Math.min(4, Number(finalOrderPosition)))]}
-              </Text>
-            </View>
+          ))}
+          
+          <View className="mt-3 border-t border-gray-300 pt-3 pb-5">
+            <Text className="font-NunitoBold text-black">
+              Total: ₦{parsedOrder.transaction.amountPaid.toLocaleString()}
+            </Text>
+            <Text className="font-NunitoBold text-black mt-1">
+              Delivery Fare: ₦
+              {parsedOrder?.delivery?.fareAmount?.toLocaleString()}
+            </Text>
+            <Text className="text-gray-500 font-RalewayLight mt-1">
+              Date: {new Date(parsedOrder.createdAt).toLocaleString()}
+            </Text>
           </View>
-        {/* Step 1: Order Taken */}
-        <View className="flex-row justify-between items-center mb-8">
-          <View className="flex-row items-center">
-            <View className="rounded-2xl bg-[#FFF6E5] p-3 mr-4">
-              <Image
-                source={require("../../../assets/images/order-taken.png")}
-                className="w-10 h-10"
-                resizeMode="contain"
-              />
-            </View>
-            <View>
-              <Text className="text-lg font-NunitoMedium">Order Taken</Text>
-            </View>
-          </View>
-          <Ionicons name="checkmark-circle" size={22} color="#004CFF" />
-        </View>
-
-        {/* Dotted Line */}
-        <View className="h-6 border-l-2 border-dotted border-blue-400 ml-8" />
-
-        {/* Step 2: Being Prepared */}
-        <View className="flex-row justify-between items-center mb-8">
-          <View className="flex-row items-center">
-            <View className="rounded-2xl bg-[#EAF3FF] p-3 mr-4">
-              <Image
-                source={require("../../../assets/images/order-prepared.png")}
-                className="w-10 h-10"
-                resizeMode="contain"
-              />
-            </View>
-            <View>
-              <Text className="text-lg font-NunitoMedium">
-                Order Is Being Prepared
-              </Text>
-            </View>
-          </View>
-          <Ionicons name="checkmark-circle" size={22} color="#004CFF" />
-        </View>
-
-        {/* Dotted Line */}
-        <View className="h-6 border-l-2 border-dotted border-blue-400 ml-8" />
-
-        {/* Step 3: Being Delivered */}
-        <View className="flex-row justify-between items-center mb-6">
-          <View className="flex-row items-center">
-            <View className="rounded-2xl bg-[#FFECEC] p-3 mr-4">
-              <Image
-                source={require("../../../assets/images/order-delivered.png")}
-                className="w-10 h-10"
-                resizeMode="contain"
-              />
-            </View>
-            <View>
-              <Text className="text-lg font-NunitoMedium">
-                Order Is Being Delivered
-              </Text>
-              <Text className="text-base font-NunitoLight">
-                Your delivery agent is coming
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity className="bg-[#004CFF] p-2 rounded-full">
-            <Ionicons name="call-outline" size={18} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Map Preview */}
-        <View className="w-full h-48 rounded-2xl overflow-hidden mt-2">
-          <MapView
-            style={{ flex: 1 }}
-            initialRegion={{
-              latitude: 6.5244,
-              longitude: 3.3792,
-              latitudeDelta: 0.05,
-              longitudeDelta: 0.05,
-            }}
-          >
-            <Marker
-              coordinate={{ latitude: 6.5244, longitude: 3.3792 }}
-              title="Delivery Agent"
-              description="On the way"
-            />
-          </MapView>
-        </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+      
+    </SafeAreaView>
   );
-}
+};
+
+export default TrackOrderScreen;

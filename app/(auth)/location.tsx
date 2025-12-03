@@ -28,7 +28,6 @@ const Address = () => {
     latitude: number;
     longitude: number;
   } | null>(null);
-  console.log(visitor)
 
   useEffect(() => {
     // try to fetch location on mount

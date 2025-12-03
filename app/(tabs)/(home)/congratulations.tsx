@@ -11,7 +11,7 @@ const congratulations = () => {
       <Text className="text-center text-lg font-NunitoRegular text-gray-700">Your payment was successful. Thank you for shopping with us!</Text>
       {/* Button for Track Order and Back Home */}
       <View className="mt-8 w-full space-y-4">
-        <TouchableOpacity onPress={()=> router.replace("/(tabs)/(home)/track-order")} className="bg-[#0056FF] py-4 mb-4 rounded-2xl items-center">
+        <TouchableOpacity onPress={()=> router.replace("/(tabs)/(profile)/profile")} className="bg-[#0056FF] py-4 mb-4 rounded-2xl items-center">
           <Text className="text-white font-NunitoBold text-lg">Track Order</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={()=> router.replace("/(tabs)/(home)")} className="border border-gray-300 py-4 rounded-2xl items-center">

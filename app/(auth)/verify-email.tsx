@@ -23,7 +23,6 @@ const verifyEmail = () => {
     const [secondsLeft, setSecondsLeft] = useState(60);
   const [isResending, setIsResending] = useState(false);
   const {email,phone, verifyOption} = useLocalSearchParams();
-  console.log(email,phone,OTP)
 
   const submit = () => {
     setisSubmitting(true);

@@ -4,45 +4,34 @@ import {
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
+  ScrollView,
+  TextInput,
+  RefreshControl,
 } from "react-native";
-import { TextInput } from "react-native";
 import React, { useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import Dashboard from "../../assets/icons/Dashboard.svg";
 import { SearchComponent } from "../../components/SearchInput";
 import Filter from "../../assets/icons/filter.svg";
-import Electronic from "../../assets/icons/Electronics.svg";
-import Fashion from "../../assets/icons/Fashion.svg";
-import Services from "../../assets/icons/handshake 1.svg";
-import Automobile from "../../assets/icons/AutoMobile.svg";
-import Drugs from "../../assets/icons/tablets.svg";
-import Beauty from "../../assets/icons/Beauty blog.svg";
 import { router } from "expo-router";
+import { useCategory } from "hooks/useHooks";
 
-const Data1 = [
-  {
-    id: "1",
-    name: "Electronics",
-    image: <Electronic width={25} height={25} />,
-  },
-  { id: "3", name: "AutoMobile", image: <Automobile width={25} height={25} /> },
-  { id: "4", name: "Drugs", image: <Drugs width={25} height={25} /> },
-  { id: "2", name: "Fashion", image: <Fashion width={25} height={25} /> },
-  { id: "5", name: "Beauty", image: <Beauty width={25} height={25} /> },
-];
-const categories = [
-  "Fashion",
-  "Electronics",
-  "Home",
-  "Beauty",
-  "Sports",
-  "Toys",
-  "Books",
-];
-const condition = ["Brand New", "Used", "Refurbuished"];
+
+const condition = ["new", "used"];
+interface Props {
+  placeholder: string;
+  otherStyles: string;
+  white: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  onSubmitEditing?: () => void;
+}
 
 const search = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
@@ -50,14 +39,35 @@ const search = () => {
   const [low, setLow] = useState(0);
   const [high, setHigh] = useState(200);
   const [maxDistance, setMaxDistance] = useState("");
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const { categories, isError, isLoading, mutate } = useCategory();
 
-  const toggleCategory = (category: string) => {
-    if (selected.includes(category)) {
+  // Load recent searches on component mount
+  React.useEffect(() => {
+    const loadRecentSearches = async () => {
+      try {
+        const searches = await AsyncStorage.getItem('recentSearches');
+        if (searches) {
+          setRecentSearches(JSON.parse(searches));
+        }
+      } catch (error) {
+        console.error('Error loading recent searches:', error);
+      }
+    };
+    loadRecentSearches();
+  }, []);
+      // categories is an array of category objects: { id, name, ... }
+
+  // selected will store category ids (string[])
+  const toggleCategory = (categoryId: string) => {
+    if (selected.includes(categoryId)) {
       // unselect
-      setSelected(selected.filter((c) => c !== category));
+      setSelected(selected.filter((c) => c !== categoryId));
     } else {
       // select
-      setSelected([...selected, category]);
+      setSelected([...selected, categoryId]);
     }
   };
   const toggleCondition = (condition: string) => {
@@ -79,6 +89,39 @@ const search = () => {
     setMaxDistance("");
     setIsVisible(false);
   };
+    const applyFilters = async () => {
+      // build params to send to /search
+      const params: any = {};
+      if (searchTerm && searchTerm.trim()) params.q = searchTerm.trim();
+      if (minPrice) params.minPrice = minPrice;
+      if (maxPrice) params.maxPrice = maxPrice;
+      // backend expects a single categoryId - use first selected id if present
+      if (selected && selected.length > 0) params.categoryId = selected[0];
+      if (selectedCondition && selectedCondition.length > 0) params.condition = selectedCondition[0];
+      if (maxDistance) params.radiusKm = maxDistance;
+
+      // Try to get user location from AsyncStorage
+      try {
+        const raw = await AsyncStorage.getItem('addresses');
+        const addresses = raw ? JSON.parse(raw) : [];
+        if (addresses.length > 0) {
+          const { latitude, longitude } = addresses[0];
+          if (latitude && longitude) {
+            params.lat = latitude;
+            params.lng = longitude;
+          }
+        }
+      } catch (e) {
+        // ignore if not available
+      }
+
+      // navigate to results screen and pass filters as query params
+      router.push({
+        pathname: "./(home)/search-results",
+        params: { filters: JSON.stringify(params) },
+      });
+      setIsVisible(false);
+    };
   return (
     <SafeAreaView className="flex-1 bg-[#sF9FAFB] p-4">
       <View className=" mt-5 flex flex-row items-center gap-4">
@@ -96,7 +139,61 @@ const search = () => {
           placeholder="Search......"
           otherStyles={"flex-1"}
           white="yes"
+          value={searchTerm}
+          onChangeText={(text) => {
+            setSearchTerm(text);
+            setShowRecentSearches(text.length > 0);
+          }}
+          onSubmitEditing={async () => {
+            if (searchTerm.trim()) {
+              // Add to recent searches
+              const newSearches = [searchTerm, ...recentSearches.filter(s => s !== searchTerm)].slice(0, 5);
+              setRecentSearches(newSearches);
+              await AsyncStorage.setItem('recentSearches', JSON.stringify(newSearches));
+              setShowRecentSearches(false);
+              
+              router.push({
+                pathname: "./(home)/search-results",
+                params: { filters: JSON.stringify({ q: searchTerm.trim() }) },
+              });
+            }
+          }}
         />
+
+        {/* Recent Searches Dropdown */}
+        {showRecentSearches && recentSearches.length > 0 && (
+          <View className="absolute top-full left-0 right-12 bg-white rounded-lg shadow-lg z-50 mt-1">
+            {recentSearches.map((search, index) => (
+              <TouchableOpacity
+                key={index}
+                className="flex-row items-center px-4 py-3 border-b border-gray-100"
+                onPress={() => {
+                  setSearchTerm(search);
+                  setShowRecentSearches(false);
+                  router.push({
+                    pathname: "./(home)/search-results",
+                    params: { filters: JSON.stringify({ q: search }) },
+                  });
+                }}
+              >
+                <Ionicons name="time-outline" size={20} color="#666" />
+                <Text className="ml-3 font-NunitoRegular">{search}</Text>
+                <TouchableOpacity
+                  className="ml-auto"
+                  onPress={async (e) => {
+                    e.stopPropagation();
+                    const newSearches = recentSearches.filter(s => s !== search);
+                    setRecentSearches(newSearches);
+                    await AsyncStorage.setItem('recentSearches', JSON.stringify(newSearches));
+                  }}
+                >
+                  <Ionicons name="close" size={20} color="#666" />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+        
         <TouchableOpacity
           className="ml-3 rounded-md bg-primary-100 p-2"
           onPress={() => setIsVisible(true)}
@@ -160,29 +257,25 @@ const search = () => {
 
               {/* Category */}
               <View className="mt-5">
-                <Text className="mb-2 font-RalewaySemiBold text-xl">
-                  Category
-                </Text>
-                {/* Selet Category */}
-                <View className="flex flex-row flex-wrap items-center gap-3">
-                  {categories.map((cat, index) => {
-                    const isSelected = selected.includes(cat);
-                    return (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => toggleCategory(cat)}
-                        className={`flex flex-row items-center gap-2 rounded-lg  p-2 
-                      ${isSelected ? " bg-primary-100" : "bg-primary-400"}
-                      `}
-                      >
-                        <Text
-                          className={`${isSelected ? "font-NunitoSemiBold text-white" : "font-NunitoSemiBold text-primary-100"}`}
+                <Text className="mb-2 font-RalewaySemiBold text-xl">Category</Text>
+                {/* Select Category - scrollable for long lists */}
+                <View className="max-h-44">
+                  <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {(categories?.categories || []).map((cat: any) => {
+                      const isSelected = selected.includes(cat.id);
+                      return (
+                        <TouchableOpacity
+                          key={cat.id}
+                          onPress={() => toggleCategory(cat.id)}
+                          className={`${isSelected ? "bg-primary-100" : "bg-primary-400"} rounded-lg p-2 mr-3 mb-3`}
                         >
-                          {cat}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                          <Text className={`${isSelected ? "font-NunitoSemiBold text-white" : "font-NunitoSemiBold text-primary-100"}`}>
+                            {cat.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
                 </View>
               </View>
 
@@ -241,12 +334,10 @@ const search = () => {
               {/* Reset / Apply row */}
               <View className="mt-4 flex-row  items-center justify-center">
                 <TouchableOpacity
-                  onPress={() => setIsVisible(false)}
+                  onPress={applyFilters}
                   className="px-4 py-2 rounded-lg bg-primary-100"
                 >
-                  <Text className="text-white font-NunitoBold text-lg">
-                    Apply
-                  </Text>
+                  <Text className="text-white font-NunitoBold text-lg">Apply</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -254,20 +345,6 @@ const search = () => {
         </TouchableWithoutFeedback>
       </Modal>
 
-
-      <View className="mt-8 flex-row flex-wrap  justify-between">
-        {Data1.map((item) => (
-          <View
-            key={item.id}
-            className="w-[32%] flex-row bg-primary-100/20 items-center p-2 rounded-lg mb-3"
-          >
-            {item.image}
-            <Text className="text-base font-NunitoMedium text-primary-100 ml-1">
-              {item.name}
-            </Text>
-          </View>
-        ))}
-      </View>
     </SafeAreaView>
   );
 };
