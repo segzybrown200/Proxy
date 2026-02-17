@@ -113,7 +113,7 @@ const Message = () => {
     >
       {/* Avatar */}
       <View className="w-12 h-12  relative">
-        <Image style={{width: 48, height: 48}} className='rounded-full' source={{uri: item?.user?.kycDocument?.selfieUrl }} contentFit="cover" />
+        <Image style={{width: 48, height: 48, borderRadius: 9999}} className='rounded-full' source={{uri: item?.user?.kycDocument?.selfieUrl }} contentFit="cover" />
         {item?.user?.Session[0]?.isOnline && (
           <View className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#00E676]" />
         )}

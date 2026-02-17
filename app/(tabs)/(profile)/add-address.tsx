@@ -14,11 +14,9 @@ import { router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import Ionicons from 'react-native-vector-icons/Ionicons'
 
-// Replace with your Google Places API key or wire it from secure env
-const GOOGLE_PLACES_API_KEY = 'AIzaSyCLCcDMey2l91ZTwuT3avheF5R85-klUcM' // <YOUR_GOOGLE_PLACES_API_KEY>
 
 type Suggestion = {
-  place_id: string
+  placeId: string
   description: string
 }
 
@@ -27,7 +25,7 @@ type AddressCoords = {
   latitude?: number;
   longitude?: number;
 };
-
+const API_BASE_URL = 'https://proxy-backend-6of2.onrender.com/api' // replace with your backend API base URL
 const AddAddress = () => {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -51,28 +49,36 @@ const AddAddress = () => {
   }
 
   const fetchSuggestions = async (text: string) => {
-    if (!GOOGLE_PLACES_API_KEY) {
-      // Don't attempt network requests without an API key
-      setSuggestions([])
-      return
-    }
-
     setLoading(true)
     try {
-      const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-        text
-      )}&key=${GOOGLE_PLACES_API_KEY}&components=country:ng`
+      const url = `${API_BASE_URL}/search/autocomplete?input=${encodeURIComponent(text)}`
 
-      const res = await fetch(url)
+      // Add 10-second timeout to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+      const res = await fetch(url, { signal: controller.signal })
+      clearTimeout(timeoutId)
+
       const json = await res.json()
-      if (json.status === 'OK' && Array.isArray(json.predictions)) {
-        const items: Suggestion[] = json.predictions.map((p: any) => ({ place_id: p.place_id, description: p.description }))
+      if (json.success && Array.isArray(json.data)) {
+        const items: Suggestion[] = json.data.map((p: any) => ({ placeId: p.placeId, description: p.description }))
         setSuggestions(items)
+      } else if (json.data && json.data.length === 0) {
+        setSuggestions([])
+        Alert.alert('No results', 'No addresses found. Try a different search.')
       } else {
+        console.log(json)
+        console.warn('Autocomplete error:', json.message)
         setSuggestions([])
       }
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Places autocomplete failed', e)
+      if (e.name === 'AbortError') {
+        Alert.alert('Search timeout', 'Address search took too long. Please check your connection and try again.')
+      } else {
+        Alert.alert('Search failed', 'Unable to fetch address suggestions. Please try again.')
+      }
       setSuggestions([])
     } finally {
       setLoading(false)
@@ -80,26 +86,39 @@ const AddAddress = () => {
   }
 
   const selectSuggestion = async (s: Suggestion) => {
-    // Fetch place details to get coordinates
+    // Fetch place details from backend to get coordinates
     try {
-      setLoading(true);
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${s.place_id}&key=${GOOGLE_PLACES_API_KEY}`;
-      const res = await fetch(url);
-      const json = await res.json();
-      if (json.status === 'OK' && json.result && json.result.geometry && json.result.geometry.location) {
+      setLoading(true)
+      const url = `${API_BASE_URL}/search/details?placeId=${s.placeId}`
+
+      // Add 10-second timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+      const res = await fetch(url, { signal: controller.signal })
+      clearTimeout(timeoutId)
+
+      const json = await res.json()
+      console.log(json)
+      if (json.success && json.data) {
         setCoords({
-          latitude: json.result.geometry.location.lat,
-          longitude: json.result.geometry.location.lng,
-        });
+          latitude: json.data.latitude,
+          longitude: json.data.longitude,
+        })
       } else {
-        setCoords({});
+        console.warn('Could not get coordinates for address')
+        setCoords({})
       }
-    } catch (e) {
-      setCoords({});
+    } catch (e: any) {
+      console.warn('Place details fetch failed', e)
+      if (e.name === 'AbortError') {
+        Alert.alert('Details timeout', 'Could not fetch address details. Continuing with search result.')
+      }
+      setCoords({})
     } finally {
-      setQuery(s.description);
-      setSuggestions([]);
-      setLoading(false);
+      setQuery(s.description)
+      setSuggestions([])
+      setLoading(false)
     }
   }
 
@@ -202,10 +221,7 @@ const AddAddress = () => {
             <Text className="text-white text-lg font-NunitoMedium">Use current location</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => {
-              if (!GOOGLE_PLACES_API_KEY) Alert.alert('API key required', 'Please set your Google Places API key in the file to use autocomplete.')
-              else fetchSuggestions(query)
-            }}
+            onPress={() => fetchSuggestions(query)}
             className="bg-white px-3 py-2 rounded-md border border-gray-200"
           >
             <Text className='text-primary-100 font-RalewayMedium text-lg'>Search</Text>
@@ -221,7 +237,7 @@ const AddAddress = () => {
         {suggestions.length > 0 ? (
           <FlatList
             data={suggestions}
-            keyExtractor={(i) => i.place_id}
+            keyExtractor={(i) => i.placeId}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => selectSuggestion(item)} className="py-3 border-b border-gray-100">
                 <Text className="text-base font-NunitoRegular">{item.description}</Text>

@@ -27,6 +27,8 @@ const _layout = () => {
 
   return (
     <Tabs
+      initialRouteName="(home)"
+      backBehavior="order"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
@@ -40,12 +42,21 @@ const _layout = () => {
             }
           : { display: "none" },
       }}
-      backBehavior="order"
     >
       <Tabs.Screen
         name="(home)"
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            try {
+              const state = navigation.getState && navigation.getState();
+              const root = state?.routes?.[0]?.name;
+              if (root) navigation.navigate(root);
+            } catch (e) {}
+          },
+        })}
         options={{
           popToTopOnBlur: true,
+          // ensure pressing the tab always returns the stack to its root
           tabBarIcon: ({ focused }) => (
             <View className={focused ? "bg-[#004CFF] rounded-full p-2" : ""}>
               {focused ? (
@@ -60,8 +71,18 @@ const _layout = () => {
 
       <Tabs.Screen
         name="search"
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            try {
+              const state = navigation.getState && navigation.getState();
+              const root = state?.routes?.[0]?.name;
+              if (root) navigation.navigate(root);
+            } catch (e) {}
+          },
+        })}
         options={{
           popToTopOnBlur: true,
+
           tabBarIcon: ({ focused }) => (
             <View className={focused ? "bg-[#004CFF] rounded-full p-2" : ""}>
               {focused ? (
@@ -75,6 +96,15 @@ const _layout = () => {
       />
       <Tabs.Screen
         name="cart"
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            try {
+              const state = navigation.getState && navigation.getState();
+              const root = state?.routes?.[0]?.name;
+              if (root) navigation.navigate(root);
+            } catch (e) {}
+          },
+        })}
         options={{
           popToTopOnBlur: true,
           tabBarBadge: cartItems.length > 0 ? cartItems.length : undefined,
@@ -92,6 +122,16 @@ const _layout = () => {
 
       <Tabs.Screen
         name="(profile)"
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault(); // stop default behavior
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "(profile)" }], // reset stack to root
+            });
+          },
+        })}
         options={{
           popToTopOnBlur: true,
           tabBarIcon: ({ focused }) => (

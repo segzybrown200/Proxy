@@ -6,48 +6,28 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { Image } from 'expo-image';
+import { Image } from "expo-image";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Dashboard from "../../../assets/icons/Dashboard.svg";
 import { SearchComponent } from "../../../components/SearchInput";
-import Electronic from "../../../assets/icons/Electronics.svg";
-import Fashion from "../../../assets/icons/Fashion.svg";
-import Services from "../../../assets/icons/handshake 1.svg";
-import Automobile from "../../../assets/icons/AutoMobile.svg";
-import Drugs from "../../../assets/icons/tablets.svg";
-import Beauty from "../../../assets/icons/Beauty blog.svg";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo } from "react";
 import { AntDesign, Feather, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { useCategoryListings } from "hooks/useHooks";
 
-const Data = [
-  { id: 1, title: "Electronic", icon: <Electronic width={75} height={75} /> },
-  { id: 2, title: "Fashion", icon: <Fashion width={75} height={75} /> },
-  { id: 3, title: "Services", icon: <Services width={75} height={75} /> },
-  { id: 4, title: "Automobile", icon: <Automobile width={75} height={75} /> },
-  { id: 5, title: "Drugs", icon: <Drugs width={75} height={75} /> },
-  { id: 6, title: "Beauty", icon: <Beauty width={75} height={75} /> },
-];
-const categories = [
-  "Fashion",
-  "Electronics",
-  "Home",
-  "Beauty",
-  "Sports",
-  "Toys",
-  "Books",
-];
 
 const category = () => {
   const [selected, setSelected] = useState<string[]>([]);
   const params = useLocalSearchParams();
-  const { category, allCategories, id } = params;
+  const { category, allCategories, id, subCategoryId } = params;
   const { listings, isLoading, loadMore, isReachingEnd } = useCategoryListings(
-    id as string
+    {
+      categoryId: id as string | undefined,
+      subCategoryId: subCategoryId as string | undefined,
+    }
+
   );
-  // Parse categories from params if available
   const backendCategories: any = useMemo(() => {
     if (allCategories) {
       try {
@@ -57,6 +37,9 @@ const category = () => {
     }
     return null;
   }, [allCategories]);
+  const selectedCategory =
+    backendCategories?.find((c: any) => String(c.id) === String(id)) || null;
+
   useEffect(() => {
     if (category && category !== "Category") {
       setSelected([category as string]);
@@ -64,42 +47,53 @@ const category = () => {
       setSelected([]);
     }
   }, [category]);
+  const subCategoryName = params?.subCategoryName as string;
 
-  const renderListings = ({ item }:any) => (
-      <TouchableOpacity onPress={()=>router.push({pathname:"/(tabs)/(home)/details", params:{item:JSON.stringify(item)}})} className="mt-5 w-[49%] border border-primary-100 rounded-lg">
-          <Image
-            source={{uri: item?.media[0]?.url}}
-            style={{width: '100%', height: 160}}
-            className="rounded-lg border-4 border-white shadow-2xl"
-            contentFit="cover"
-          />
-          <View>
-            <View className="p-1 flex-row justify-between items-start">
-              <Text className="text-xl font-NunitoRegular text-textColor-100 mt-2">
-                {item.title}
-              </Text>
-              <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center mt-1">
-                <FontAwesome6 name="plus" size={18} color="white" />
-              </TouchableOpacity>
-            </View>
-            <Text className="text-[20px] p-1 font-RalewayExtraBold text-textColor-100 ">
-              ₦{item.price}
-            </Text>
 
-            <View className="relative p-2 mt-2 mb-5">
-              <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center">
-                {item.condition.toUpperCase()}
-              </Text>
-              <Text className="font-NunitoMedium text-lg">
-                {item.seller?.vendorApplication?.location?.city},{item.seller?.vendorApplication?.location?.country}
-              </Text>
-            </View>
-          </View>
-          <View className="bg-primary-100 p-2 rounded-b-lg absolute top-4 right-2">
-            <Text className="text-white font-NunitoLight">Verified ID</Text>
-          </View>
-        </TouchableOpacity>
-  )
+  const renderListings = ({ item }: any) => (
+    <TouchableOpacity
+      onPress={() =>
+        router.push({
+          pathname: "/(tabs)/(home)/details",
+          params: { item: JSON.stringify(item) },
+        })
+      }
+      className="mt-5 w-[49%] border border-primary-100 rounded-lg"
+    >
+      <Image
+        source={{ uri: item?.media[0]?.url }}
+        style={{ width: "100%", height: 160 }}
+        className="rounded-lg border-4 border-white shadow-2xl"
+        contentFit="cover"
+      />
+      <View>
+        <View className="p-1 flex-row justify-between items-start">
+          <Text className="text-xl font-NunitoRegular text-textColor-100 mt-2">
+            {item.title}
+          </Text>
+          <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center mt-1">
+            <FontAwesome6 name="plus" size={18} color="white" />
+          </TouchableOpacity>
+        </View>
+        <Text className="text-[20px] p-1 font-RalewayExtraBold text-textColor-100 ">
+          ₦{item.price}
+        </Text>
+
+        <View className="relative p-2 mt-2 mb-5">
+          <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center">
+            {item.condition.toUpperCase()}
+          </Text>
+          <Text className="font-NunitoMedium text-lg">
+            {item.seller?.vendorApplication?.location?.city},
+            {item.seller?.vendorApplication?.location?.country}
+          </Text>
+        </View>
+      </View>
+      <View className="bg-primary-100 p-2 rounded-b-lg absolute top-4 right-2">
+        <Text className="text-white font-NunitoLight">Verified ID</Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-[#sF9FAFB] p-4">
@@ -125,11 +119,60 @@ const category = () => {
 
       {category !== "Category" && (
         <View>
+          {/* Subcategories (if present) */}
+          {selectedCategory?.subCategories &&
+            selectedCategory.subCategories.length > 0 && (
+              <View className="mt-4">
+                <Text className="font-RalewayBold text-lg mb-2">
+                  Subcategories
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingVertical: 4 }}
+                >
+                  {selectedCategory.subCategories.map((sub: any) => (
+                    <TouchableOpacity
+                      key={sub.id}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(tabs)/(home)/category",
+                          params: {
+                            category: selectedCategory?.name,
+                            id: String(selectedCategory?.id),
+                            subCategoryId: String(sub.id),
+                            subCategoryName: sub.name,
+                            allCategories: JSON.stringify(
+                              backendCategories || []
+                            ),
+                          },
+                        })
+                      }
+                      className="px-3 py-2 mr-2 bg-primary-100/10 rounded-full"
+                    >
+                      <Text className="text-primary-100 font-NunitoMedium">
+                        {sub.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           <View className="mt-5 flex  flex-row items-center justify-between">
             <Text className="font-RalewayBold text-2xl">
-              {category} Listings
+              {subCategoryName ? subCategoryName : category} Listings
             </Text>
           </View>
+          {isLoading && (!listings || listings.length === 0) ? (
+            <View className="mt-5 flex-row flex-wrap justify-between">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <View
+                  key={`skeleton-${i}`}
+                  className="mt-5 w-[49%] h-64 bg-gray-200 rounded-lg"
+                />
+              ))}
+            </View>
+          ) : (
             <FlatList
               data={listings}
               keyExtractor={(item) => item.id}
@@ -143,13 +186,14 @@ const category = () => {
               ListFooterComponent={() =>
                 isLoading ? (
                   <ActivityIndicator size="large" color="#004CFF" />
-                ) : isReachingEnd && listings?.length === 0  ? (
+                ) : isReachingEnd && listings?.length === 0 ? (
                   <Text className="text-center font-NunitoRegular text-gray-400 my-4">
                     No more listings
                   </Text>
                 ) : null
               }
             />
+          )}
         </View>
       )}
 
@@ -164,7 +208,7 @@ const category = () => {
             contentContainerStyle={{ paddingBottom: 140 }}
           >
             <View className="mt-5 flex  flex-wrap flex-row  ">
-              {(backendCategories || Data).map((data: any) => (
+              {(backendCategories).map((data: any) => (
                 <TouchableOpacity
                   key={data.id}
                   onPress={() =>

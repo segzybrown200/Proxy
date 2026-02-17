@@ -21,7 +21,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import axios from "axios";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter, router } from "expo-router";
 import { useGetConversions } from "hooks/useHooks";
 import { markMessagesAsRead } from "api/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -88,7 +88,7 @@ function dedupeMessages(arr: Message[] | undefined) {
 
 
 const Chat = () => {
-  const router = useRouter();
+  // const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -427,7 +427,7 @@ useEffect(() => {
       fileName: type === "application/pdf" ? name : undefined,
       createdAt: new Date().toISOString(),
       _key: `msg-${tempId}-${sellers?.user?.id || sellers?.id}-${Date.now()}`
-    };
+    }; 
     setMessages((prev) => {
       // Check for any existing message with the same tempId
       const exists = prev.some(m => m.tempId === tempId);
@@ -496,7 +496,6 @@ useEffect(() => {
       _key: `msg-${tempId}-${user?.data?.user?.id}-${Date.now()}`
     };
 
-    console.log(msg)
 
     setMessages((prev) => {
       // Check for any existing message with the same tempId
@@ -559,7 +558,9 @@ useEffect(() => {
             <TouchableOpacity onPress={() => setSelectedImage(item?.mediaUrl)}>
               <Image
                 source={{ uri: item?.mediaUrl }}
-                className="w-48 h-36 rounded-lg"
+                // className="w-48 h-36 rounded-lg"
+                contentFit="cover"
+                style={{ resizeMode: "cover", borderRadius: 10, width: 192, height: 144 }}
               />
             </TouchableOpacity>
           )}
@@ -664,10 +665,10 @@ useEffect(() => {
           </TouchableOpacity>
          <View className="w-full h-full justify-center items-center"> 
            <Image 
-          style={{width: '100%', height: '80%', borderRadius: 100}}
+          style={{width: '100%', height: '80%', borderRadius: 10}}
             source={{ uri: selectedImage }} 
             className="h-[80%]" 
-            contentFit="contain"
+            contentFit="cover"
           />
          </View>
         </View>
@@ -686,7 +687,7 @@ useEffect(() => {
           </TouchableOpacity>
           <Image
             source={{uri: sellers?.seller?.kycDocument?.selfieUrl || sellers?.kycDocument?.selfieUrl || "https://via.placeholder.com/150"}}
-            style={{width: 40, height: 40}}
+            style={{width: 40, height: 40, borderRadius: 20, marginRight: 12}}
             className="rounded-full mr-3"
             contentFit="cover"
           />

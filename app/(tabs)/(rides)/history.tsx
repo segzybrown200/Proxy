@@ -21,6 +21,9 @@ const History = () => {
   const { isError,  isLoading, history}= useRiderHistory(token)
   // Mock data - replace with actual API call
 
+  // console.log(history?.data[0]?.status)
+  console.log(history)
+
   const filteredOrders = (history?.data || [])?.filter(
     (order:any) => filter === "ALL" || order.status === filter
   ) || [];

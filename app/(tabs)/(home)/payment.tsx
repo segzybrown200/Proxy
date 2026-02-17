@@ -57,6 +57,9 @@ export default function PaymentScreen() {
     }
   };
 
+  console.log("addresses", addresses)
+ 
+
   const handlePaymentSuccess = async (res: any) => {
     console.log("✅ Payment Successful:", res);
     setShowPaystack(false);
@@ -71,6 +74,7 @@ export default function PaymentScreen() {
         dropoffLng: addresses.length > 0 ? addresses[0].longitude : null,
         paymentType: "PAYSTACK"
       };
+      console.log(data)
       const token = user?.data?.token;
 
       orderPlaced(data, ref, token)

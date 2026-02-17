@@ -31,25 +31,42 @@ export function useCategory() {
         mutate,
     };
 }
-export const useCategoryListings = ( categoryId: string) => {
+export const useCategoryListings = (
+  params: { categoryId?: string; subCategoryId?: string }
+) => {
+
+  const { categoryId, subCategoryId } = params;
+
   const fetcher = async (url: string) => {
     const res = await axios.get(url);
     return res.data.data;
   };
 
   const getKey = (pageIndex: number, previousPageData: any) => {
-    if (!categoryId) return null; // pause if no category selected
-    if (previousPageData && !previousPageData.nextCursor) return null; // reached end
+    if (!categoryId && !subCategoryId) return null; 
+    if (previousPageData && !previousPageData.nextCursor) return null; 
 
     const cursor = pageIndex === 0 ? "" : previousPageData.nextCursor;
-    return `https://proxy-backend-6of2.onrender.com/api/listings/search-category?categoryId=${categoryId}&limit=10${cursor ? `&cursor=${cursor}` : ""}`;
+
+    let url = `https://proxy-backend-6of2.onrender.com/api/listings/search-category?limit=10`;
+
+    // Add filters
+    if (categoryId) url += `&categoryId=${categoryId}`;
+    // Send `subCategoryId` (camelCase) to match the Prisma field/back-end
+    if (subCategoryId) url += `&subCategoryId=${subCategoryId}`;
+    if (cursor) url += `&cursor=${cursor}`;
+
+    return url;
   };
 
-  const { data, error, isLoading, size, setSize, mutate }:any = useSWRInfinite(getKey, fetcher, {
-    revalidateOnFocus: false,
-  });
+  const { data, error, isLoading, size, setSize, mutate }: any =
+    useSWRInfinite(getKey, fetcher, {
+      revalidateOnFocus: false,
+      revalidateOnMount: false, // use cached/prefetched data on mount
+      dedupingInterval: 60000, // 60s dedupe window
+    });
 
-  const listings = data ? data.flatMap((page:any) => page.listings) : [];
+  const listings = data ? data.flatMap((page: any) => page.listings) : [];
   const isReachingEnd = data && !data[data.length - 1]?.nextCursor;
 
   return {
@@ -61,6 +78,7 @@ export const useCategoryListings = ( categoryId: string) => {
     mutate,
   };
 };
+
 
 export const useSearchListings = (params: Record<string, any> | null) => {
   const fetcher = async (key: string) => {
@@ -202,7 +220,6 @@ export const useUserOrder = (token:string)=>{
       revalidateOnMount: true, // Ensure it fetches when the component 
     }
   );
-  console.log(data?.data)
     return {
         order: data?.data || [],
         isLoading,

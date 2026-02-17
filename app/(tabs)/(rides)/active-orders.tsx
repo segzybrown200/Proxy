@@ -19,6 +19,8 @@ const ActiveOrders = () => {
   const { isError,  isLoading, active}= useRiderActiveOrder(token)
   // Mock data - replace with actual API call
 
+  console.log(active)
+
 
   const getStatusColor = (status: Order["status"]) => {
     switch (status) {
@@ -113,7 +115,7 @@ const ActiveOrders = () => {
             </Text>
           </View>
         ) : (
-          active?.data.map((order:any) => (
+          active?.data?.map((order:any) => (
             <TouchableOpacity
               key={order?.id}
               onPress={() => router.push({

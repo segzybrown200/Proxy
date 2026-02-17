@@ -8,10 +8,10 @@ import {
   ActivityIndicator,
   ScrollView,
   FlatList,
-  Image,
   Linking,
   Animated,
 } from "react-native";
+import { Image } from "expo-image";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -30,12 +30,7 @@ const TrackOrderScreen = () => {
 
   const riderInfo = parsedOrder?.delivery?.rider
 
-  console.log(order)
 
-
-
-
-  // console.log(parsedOrder.delivery)
 
   const delivery = parsedOrder.delivery;
   const isDigital = parsedOrder.isDigital;
@@ -43,15 +38,12 @@ const TrackOrderScreen = () => {
   // Animate marker smoothly
   const riderAnim = useRef(new Animated.ValueXY()).current;
 
-  console.log(parsedOrder.digitalFiles)
-
   useEffect(() => {
     if (!delivery?.id) return;
 
     socket.on("delivery_location_update", (data) => {
       if (data?.deliveryId === delivery.id) {
         const newLocation = { latitude: data.lat, longitude: data.lng };
-        console.log(newLocation)
         setRiderLocation(newLocation);
         Animated.timing(riderAnim, {
           toValue: { x: data.lat, y: data.lng },
@@ -140,21 +132,19 @@ const TrackOrderScreen = () => {
     longitude: Number(delivery?.dropoffLng) || 0,
   };
   const riderCords = {
-    latitude: Number(parsedOrder.delivery?.rider?.currentLat) || 0,
-    longitude: Number(parsedOrder.delivery?.rider?.currentLng) || 0,
+    latitude: Number(parsedOrder?.rider?.currentLat) || 0,
+    longitude: Number(parsedOrder?.rider?.currentLng) || 0,
   }
-  const statusSteps = ["PENDING","ACCEPTED", "PICKED_UP", "IN_TRANSIT", "DELIVERED"];
+  const statusSteps = ["PENDING","SEARCH_OF_RIDER", "ACCEPTED", "PICKED_UP", "IN_TRANSIT", "DELIVERED"];
   const activeIndex = statusSteps.indexOf(currentStatus);
   
   // Show fullscreen map during active delivery
   const isActiveDelivery = currentStatus === "PICKED_UP" || currentStatus === "IN_TRANSIT";
-  console.log(pickup)
-  console.log(riderCords)
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Header - Hidden during fullscreen map */}
-      {!isActiveDelivery && (
+      {isActiveDelivery && (
         <View className="flex-row items-center mt-7 px-4 pt-4 pb-3 border-b border-gray-200">
           <TouchableOpacity
             onPress={() => router.back()}
@@ -217,7 +207,7 @@ const TrackOrderScreen = () => {
                 }`}
               />
               <Text
-                className={`text-xs mt-1 ${
+                className={`text-xs mt-1 text-center ${
                   index <= activeIndex
                     ? "text-blue-600 font-NunitoBold"
                     : "text-gray-400"
@@ -239,6 +229,8 @@ const TrackOrderScreen = () => {
                     "https://cdn-icons-png.flaticon.com/512/149/149071.png",
                 }}
                 className="w-12 h-12 rounded-full mr-3"
+                contentFit="cover"
+                style={{ borderRadius: 100, width: 48, height: 48, marginRight: 12 }}
               />
               <View className="flex-1">
                 <Text className="font-NunitoBold text-black text-lg">
@@ -252,7 +244,7 @@ const TrackOrderScreen = () => {
                   {riderInfo?.vehicle?.model}
                 </Text>
                    <Text className="font-NunitoMedium text-gray-500">
-                  {riderInfo?.vehicle?.plateNumber}
+                  PlateNumber: {riderInfo?.vehicle?.plateNumber}
                 </Text>
                 </View>
                
@@ -267,6 +259,7 @@ const TrackOrderScreen = () => {
           )}
 
           {/* Order Details */}
+          <ScrollView horizontal={true} className="mb-5 ">
           {parsedOrder.listings?.map((item: any) => (
             <View key={item.id} className="flex-row items-center mb-3">
               <Image
@@ -274,6 +267,8 @@ const TrackOrderScreen = () => {
                   uri: item.image || "https://via.placeholder.com/80",
                 }}
                 className="w-12 h-12 rounded-md mr-3"
+                contentFit="cover"
+                style={{ borderRadius: 8, width: 48, height: 48, marginRight: 12 }}
               />
               <View className="flex-1">
                 <Text className="font-NunitoSemiBold text-black">
@@ -285,6 +280,7 @@ const TrackOrderScreen = () => {
               </View>
             </View>
           ))}
+          </ScrollView>
           
           <View className="mt-3 border-t border-gray-300 pt-3 pb-5">
             <Text className="font-NunitoBold text-black">

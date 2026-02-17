@@ -8,10 +8,10 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  Image,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { Image } from "expo-image";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useSelector } from "react-redux";
 
@@ -28,18 +28,19 @@ const OrderScreen = () => {
   const activeOrders = useMemo(() => {
     if (!order?.data) return [];
     return order.data.filter(
-      (o: any) => o.status === "PENDING" || o.status === "IN_PROGRESS"
+      (o: any) => o?.delivery?.status === "PENDING" || o?.delivery?.status === "IN_TRANSIT" || o?.delivery?.status === "PICKED_UP" || o?.delivery?.status === "ACCEPTED" || o?.delivery?.status === "SEARCH_OF_RIDER"
     );
   }, [order]);
 
   const historyOrders = useMemo(() => {
     if (!order?.data) return [];
     return order.data.filter(
-      (o: any) => o.status === "DELIVERED" || o.status === "CANCELLED"
+      (o: any) =>  o?.delivery?.status === "DELIVERED" ||  o?.delivery?.status === "CANCELLED"
     );
   }, [order]);
 
   const data = active === "orders" ? activeOrders : historyOrders;
+
 
   const renderItem = ({ item }: { item: any }) => {
     const date = new Date(item.createdAt).toLocaleDateString("en-US", {
@@ -68,7 +69,8 @@ const OrderScreen = () => {
           <Image
             source={imageSource}
             className="w-16 h-16 rounded-md mr-3"
-            resizeMode="cover"
+            contentFit="cover"
+            style={{ borderRadius: 8, width: 64, height: 64, marginRight: 12 }}
           />
           <View>
             <Text className="text-lg font-RalewaySemiBold text-black">
@@ -88,9 +90,19 @@ const OrderScreen = () => {
             {date}
           </Text>
           <Text
-            className={`text-base mt-1 font-NunitoMedium ${
+            className={`text-base mt-1 font-NunitoBold ${
               item?.delivery.status === "DELIVERED"
                 ? "text-green-500"
+                : item?.delivery.status === "PENDING" 
+                ? "text-yellow-500"
+                : item?.delivery.status === "IN_TRANSIT" 
+                ? "text-orange-500"
+                : item?.delivery.status === "PICKED_UP"
+                ? "text-purple-500"
+                : item?.delivery.status === "ACCEPTED"
+                ? "text-blue-500"
+                : item?.delivery.status === "SEARCH_OF_RIDER"
+                ? "text-yellow-500"
                 : item.status === "CANCELLED"
                 ? "text-red-500"
                 : "text-primary-100"

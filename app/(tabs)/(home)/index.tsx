@@ -25,6 +25,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { AntDesign, Feather } from "@expo/vector-icons";
 import { mutate } from "swr";
+import axios from "axios";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatCurrency } from "utils/currency";
 
@@ -47,6 +48,21 @@ const index = () => {
   } = useNewListings();
 
   const NewList = NewListing?.data || [];
+
+  // Prefetch helper: fetch first page for a category and store in SWR cache
+  const buildCategoryUrl = (categoryId: string, cursor = "") =>
+    `https://proxy-backend-6of2.onrender.com/api/listings/search-category?limit=10&categoryId=${categoryId}${cursor ? `&cursor=${cursor}` : ""}`;
+
+  const prefetchCategory = async (categoryId: string) => {
+    try {
+      const url = buildCategoryUrl(categoryId);
+      const res = await axios.get(url);
+      // cache first page response under the same key useSWRInfinite will generate for page 0
+      mutate(url, res.data.data, false); // don't revalidate immediately
+    } catch (err) {
+      console.warn("prefetchCategory failed", err);
+    }
+  };
 
   // small helper: promise timeout wrapper
   async function withTimeout<T>(promise: Promise<T>, ms = 12000): Promise<T> {
@@ -77,6 +93,7 @@ const index = () => {
           // restore stored address if available
           try {
             const stored = await AsyncStorage.getItem('userLocation');
+            console.log("stored",stored)
             if (stored) {
               const parsed = JSON.parse(stored);
               setUserAddress(parsed?.address || 'Unable to fetch location');
@@ -105,6 +122,7 @@ const index = () => {
         // restore cached address if available instead of showing an error string
         try {
           const stored = await AsyncStorage.getItem('userLocation');
+          console.log(stored)
           if (stored) {
             const parsed = JSON.parse(stored);
             setUserAddress(parsed?.address || 'No address found');
@@ -119,13 +137,15 @@ const index = () => {
         return;
       }
 
-      // get current position and reverse geocode with timeouts to avoid hanging
-      const loc = await withTimeout(Location.getCurrentPositionAsync({}), 10000);
+      // get current position and reverse geocode with generous timeouts for slow networks/GPS
+      const loc = await withTimeout(Location.getCurrentPositionAsync({}), 20000);
       const rev = await withTimeout(Location.reverseGeocodeAsync({
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
-      }), 8000);
+      }), 15000);
+      console.log(loc)
       let address = "";
+      console.log(address)
       if (rev && rev.length > 0) {
         const place = rev[0];
         const parts: string[] = [];
@@ -335,6 +355,7 @@ const index = () => {
             // Show only first 6 categories in home view
             categories?.categories.slice(0, 6).map((item: any) => (
               <TouchableOpacity
+                onPressIn={() => prefetchCategory(String(item.id))}
                 onPress={() =>
                   router.push({
                     pathname: "/(tabs)/(home)/category",
