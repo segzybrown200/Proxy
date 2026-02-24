@@ -1,4 +1,5 @@
-import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getNewListings, getOrders, getPopularListings, getRiderHistory, getRiderStatus, getSingleDeliveryOrder } from "api/api"
+import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getNewListings, getOrders, getPopularListings, getRiderHistory, getRiderStatus, getSingleDeliveryOrder, getWalletBalance } from "api/api"
+import { getWalletTransactions } from "api/api"
 import axios from "axios";
 import useSWR  from "swr"
 import { SWRConfiguration } from "swr"
@@ -290,3 +291,60 @@ export const useSingleOrder = (token:string, id:string)=>{
     };
 
 }
+
+export const useWalletBalance = (token?: string) => {
+  const fetcher = (token?: string) => getWalletBalance(token);
+  console.log(token)
+
+
+  const { data, error, isLoading, mutate }: any = useSWR(
+    token ? `/wallet/balance` : null,
+    () => fetcher(token),
+
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true,
+    }
+  );
+  
+  // console.log("data", data.data)
+  const wallet = data?.data?.data || {};
+
+  return {
+    balance: Number(wallet.balance) || 0,
+    currency: wallet.currency || '₦',
+    updatedAt: wallet.updatedAt,
+    walletId: wallet.walletId,
+    isLoading,
+    isError: !!error,
+    mutate,
+  };
+};
+
+export const useWalletTransactions = (token?: string, params?: { limit?: number; skip?: number }) => {
+  const fetcher = (token?: string, params?: { limit?: number; skip?: number }) => getWalletTransactions(token, params);
+
+  const key = token ? `/wallet/transactions?limit=${params?.limit || 50}&skip=${params?.skip || 0}` : null;
+
+  const { data, error, isLoading, mutate }: any = useSWR(
+    key,
+    () => fetcher(token, params),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true,
+    }
+  );
+
+
+  // Support different response shapes like { data: { transactions: [...] } } or { transactions: [...] }
+  const txs = data?.data?.data?.transactions || data?.transactions || data?.data || [];
+
+  return {
+    transactions: Array.isArray(txs) ? txs : [],
+    isLoading,
+    isError: !!error,
+    mutate,
+  };
+};

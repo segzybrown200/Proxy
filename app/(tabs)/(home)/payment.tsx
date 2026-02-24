@@ -21,6 +21,7 @@ import {
   useConfirmPayment,
 } from "@stripe/stripe-react-native";
 import { router, useFocusEffect } from "expo-router";
+import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from "react-redux";
 import { selectIsVisitor, VisitorState } from "global/authSlice";
 import { RootState } from "global/store";
@@ -29,10 +30,22 @@ import {
   selectCartItems,
   selectCartTotal,
 } from "global/listingSlice";
-import { orderPlaced, createStripePaymentIntent } from "api/api";
+import { orderPlaced, createStripePaymentIntent, chargeWallet, getWalletBalance, placeWalletOrder } from "api/api";
 import { showError } from "utils/toast";
 
 export default function PaymentScreen() {
+  const navigation = useNavigation();
+  const handleBack = () => {
+    try {
+      if (navigation && (navigation as any).canGoBack && (navigation as any).canGoBack()) {
+        (navigation as any).goBack();
+      } else {
+        router.replace('/(tabs)/(home)');
+      }
+    } catch (e) {
+      router.replace('/(tabs)/(home)');
+    }
+  };
   const [addresses, setAddresses] = useState<Array<any>>([]);
   const isVistor = useSelector(selectIsVisitor);
   const dispatch = useDispatch();
@@ -40,6 +53,7 @@ export default function PaymentScreen() {
   const [loading, setLoading] = useState(false);
   const [showPaystack, setShowPaystack] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const paystackWebViewRef = useRef<paystackProps.PayStackRef>(null);
   const [cardDetails, setCardDetails] = useState<any>(null);
   const { confirmPayment } = useConfirmPayment();
@@ -57,7 +71,6 @@ export default function PaymentScreen() {
     }
   };
 
-  console.log("addresses", addresses)
  
 
   const handlePaymentSuccess = async (res: any) => {
@@ -144,6 +157,54 @@ export default function PaymentScreen() {
         initiateStripePayment();
         return;
       }
+      if (selectedMethod === "wallet") {
+        initiateWalletPayment();
+        return;
+      }
+    }
+  };
+
+  const initiateWalletPayment = async () => {
+    setLoading(true);
+    try {
+      const token = user?.data?.token;
+      if (!token) {
+        Alert.alert('Please login to use wallet');
+        return;
+      }
+
+      const data = {
+        items: cartItems,
+        dropoffAddress: addresses.length > 0 ? addresses[0].address : "",
+        dropoffLat: addresses.length > 0 ? addresses[0].latitude : null,
+        dropoffLng: addresses.length > 0 ? addresses[0].longitude : null,
+        paymentType: "WALLET",
+        amountPaidByCustomer: total
+      };
+
+      // Call backend to charge wallet and create order atomically
+
+      const orderData = await placeWalletOrder(data, token);
+
+      const resData = orderData.data || orderData;
+
+      console.log(resData)
+      // assume success status in response
+      dispatch(clearCart());
+      router.replace('/(tabs)/(home)/congratulations');
+    } catch (err: any) {
+      console.warn('Wallet payment error', err);
+      const message = err?.response?.data?.message || err?.message || 'Wallet payment failed';
+      if (message.toLowerCase().includes('insufficient')) {
+        Alert.alert('Insufficient funds', 'Your wallet balance is insufficient. Would you like to top up?', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Top up', onPress: () => router.push('/(tabs)/(profile)/wallet') }
+        ]);
+      } else {
+        showError(message);
+      }
+    } finally {
+      setLoading(false);
     }
   };
   useFocusEffect(
@@ -155,11 +216,31 @@ export default function PaymentScreen() {
   useEffect(() => {
     // initialize Stripe (ensure you replace with your publishable key)
     // You may prefer to initialize this in your app root using <StripeProvider>
-    initStripe({
-      publishableKey:
-        "pk_test_51SWC8PKosm6nlnYmvcbkgsMCp3X1oSNc2WZ60oYTKH99plGcg8Jy9VsGHnoSVTLXHOaFnZkTNS7tjn8ZuMnhJx0s005ryiV8lp",
-    });
+    if (!(global as any).__stripeInit) {
+      initStripe({
+        publishableKey:
+          "pk_test_51SWC8PKosm6nlnYmvcbkgsMCp3X1oSNc2WZ60oYTKH99plGcg8Jy9VsGHnoSVTLXHOaFnZkTNS7tjn8ZuMnhJx0s005ryiV8lp",
+      });
+      (global as any).__stripeInit = true;
+    }
   }, []);
+
+  useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const token = user?.data?.token;
+        if (!token) return;
+        const res = await getWalletBalance(token);
+        const data = res.data || res;
+        console.log(data)
+        const w = data.data || data;
+        if (w && typeof w.balance !== 'undefined') setWalletBalance(Number(w.balance));
+      } catch (e) {
+        // ignore
+      }
+    };
+    fetchWallet();
+  }, [user]);
 
   const initiateStripePayment = async () => {
     if (!cardDetails || !cardDetails.complete) {
@@ -289,7 +370,7 @@ export default function PaymentScreen() {
       >
         <View className=" mt-7 mb-7 flex flex-row items-center gap-4 ">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={handleBack}
             className="rounded-full bg-[#ECF0F4] p-2"
           >
             <MaterialIcons name="keyboard-arrow-left" size={24} color="black" />
@@ -338,6 +419,8 @@ export default function PaymentScreen() {
 
         {/* Items */}
         <View className="mb-6">
+        
+
           <Text className="text-xl font-semibold mb-2 font-NunitoBold">
             Items
           </Text>
@@ -378,6 +461,24 @@ export default function PaymentScreen() {
         </View>
 
         <View className="mb-6">
+              <TouchableOpacity
+              onPress={() => setSelectedMethod("wallet")}
+              className={`flex-row items-center justify-between p-4 rounded-2xl mb-2 ${
+                selectedMethod === "wallet" ? "bg-blue-50 border border-blue-500" : "bg-gray-50 border border-gray-200"
+              }`}
+            >
+              <View className="flex-row items-center">
+                <Ionicons
+                  name={selectedMethod === "wallet" ? "radio-button-on" : "radio-button-off"}
+                  size={20}
+                  color={selectedMethod === "wallet" ? "#004CFF" : "#9CA3AF"}
+                />
+                <Text className="ml-2 text-gray-800 font-RalewaySemiBold">Wallet</Text>
+              </View>
+              <Text className="text-gray-800 font-RalewaySemiBold">{walletBalance !== null ? `₦${walletBalance.toLocaleString()}` : 'Loading...'}</Text>
+            </TouchableOpacity>
+
+            {/* Pay with paystack
           <TouchableOpacity
             onPress={() => setSelectedMethod("paystack")}
             className={`flex-row items-center justify-between p-4 rounded-2xl mb-2 ${
@@ -404,7 +505,8 @@ export default function PaymentScreen() {
               Pay with Paystack
             </Text>
           </TouchableOpacity>
-
+            
+            Pay with Stripe 
           <TouchableOpacity
             onPress={() => setSelectedMethod("stripe")}
             className={`flex-row items-center justify-between p-4 rounded-2xl ${
@@ -451,7 +553,8 @@ export default function PaymentScreen() {
                 </Text>
               )}
             </View>
-          )}
+        </View>
+        )} */}
         </View>
 
         {/* Total + Pay */}

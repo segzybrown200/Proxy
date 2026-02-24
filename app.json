@@ -19,8 +19,7 @@
         "dark": "./assets/ios-dark.png",
         "light": "./assets/ios-light.png",
         "tinted": "./assets/ios-tinted.png"
-      }
-      ,
+      },
       "config": {
         "googleMapsApiKey": "AIzaSyCLCcDMey2l91ZTwuT3avheF5R85-klUcM"
       }
@@ -86,6 +85,13 @@
         "@stripe/stripe-react-native",
         {
           "publishableKey": "pk_test_51SWC8PKosm6nlnYmvcbkgsMCp3X1oSNc2WZ60oYTKH99plGcg8Jy9VsGHnoSVTLXHOaFnZkTNS7tjn8ZuMnhJx0s005ryiV8lp"
+        }
+      ],
+       [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
         }
       ]
     ],

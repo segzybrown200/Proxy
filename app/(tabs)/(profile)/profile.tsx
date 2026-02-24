@@ -55,6 +55,12 @@ export default function ProfileScreen() {
       route: "order",
     },
     {
+      title: "Wallet",
+      icon: <MaterialCommunityIcons name="wallet" size={24} color="#F59E0B" />,
+      color: "#F59E0B",
+      route: "wallet",
+    },
+    {
       title: "Message",
       icon: <MaterialIcons name="message" size={24} color="#FF3B30" />,
       color: "#FF3B30",

@@ -123,6 +123,15 @@ export const orderPlaced = async(data:any,reference:string, token:string) => {
     throw error.response?.data || error;
   });
 }
+export const placeWalletOrder = async(data:any, token:string) => {
+  return api.post(`/vendor/create-delivery`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
 export const getUserAuth = async(token:string) => {
   return api.get(`/auth/me`, {
     headers: {
@@ -292,4 +301,54 @@ export const completeOrderWithOTP = async(token:string, deliveryId:string, otp:s
   }).catch((error) => {
     throw error.response?.data || error;
   })
+}
+
+export const verifyNinNumber = async(nin: string) => {
+  return api.post("/kyc/verify-nin", { nin }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+// Wallet APIs
+export const fundWalletPaystack = async(data: { amount: number; reference: string }, token?: string) => {
+  console.log(data)
+  return api.post(`/payments/wallet/fund-paystack`, data, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  }).catch((error) => {
+    console.log(error)
+    throw error.response?.data || error;
+  });
+}
+
+export const fundWalletStripe = async(data: { amount: number; paymentIntentId: string }, token?: string) => {
+  return api.post(`/payments/wallet/fund-stripe`, data, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const getWalletBalance = async(token?: string) => {
+  return api.get(`/payments/wallet/balance`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const getWalletTransactions = async(token?: string, params?: { limit?: number; skip?: number }) => {
+  return api.get(`/payments/wallet/history`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    params,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const chargeWallet = async(data: { amount: number; orderId?: string }, token?: string) => {
+  return api.post(`/payments/wallet/charge`, data, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
 }

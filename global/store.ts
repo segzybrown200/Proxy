@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // or any 
 import authReducer from './authSlice';
 import listingReducer from './listingSlice';
 import riderReducer from './riderSlice';
+import walletReducer from './walletSlice';
 // Create persist config for each reducer that needs persistence
 const authPersistConfig = {
   key: 'auth',
@@ -34,12 +35,20 @@ const riderPersistConfig = {
   whitelist: ['registrationStatus'],
 }
 
+const walletPersistConfig = {
+  key: 'wallet',
+  storage: AsyncStorage,
+  version: 1,
+  whitelist: ['wallet'],
+}
+
 
 
 // Create persisted reducers
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 const persistedListingReducer = persistReducer(listingPersistConfig, listingReducer);
 const persistedRiderReducer = persistReducer(riderPersistConfig, riderReducer);
+const persistedWalletReducer = persistReducer(walletPersistConfig, walletReducer);
 
 // Create the Redux store with persisted reducers
 export const store = configureStore({
@@ -47,6 +56,7 @@ export const store = configureStore({
     auth: persistedAuthReducer,
     listing: persistedListingReducer,
     rider: persistedRiderReducer,
+    wallet: persistedWalletReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

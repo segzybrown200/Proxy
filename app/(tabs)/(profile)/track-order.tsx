@@ -30,8 +30,6 @@ const TrackOrderScreen = () => {
 
   const riderInfo = parsedOrder?.delivery?.rider
 
-
-
   const delivery = parsedOrder.delivery;
   const isDigital = parsedOrder.isDigital;
 

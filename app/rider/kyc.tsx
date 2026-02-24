@@ -20,7 +20,8 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import * as ImageManipulator from 'expo-image-manipulator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { riderKYCUpload } from "../../api/api";
+import { riderKYCUpload, verifyNinNumber } from "../../api/api";
+import { showError, showSuccess } from "../../utils/toast";
 
 const registrationSteps = [
   { title: "Personal", icon: "account" },
@@ -44,12 +45,14 @@ const KYCVerification = () => {
     identityDocument: "",
   });
   const [ninNumber, setNinNumber] = useState("");
-  const [idType, setIdType] = useState("");
   const user = useSelector(selectUser) as any;
   const token = (user && (user as any)?.data?.token) || null;
   const personalInfo = useSelector((s:any) => s.rider?.personalInfo);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploading, setUploading] = useState(false);
+  const [verifyingNin, setVerifyingNin] = useState(false);
+  const [verifiedNin, setVerifiedNin] = useState(false);
+  const [verifiedInfo, setVerifiedInfo] = useState<{ fullName?: string; dob?: string } | null>(null);
 
   const compressImage = async (uri: string): Promise<string> => {
     try {
@@ -92,6 +95,149 @@ const KYCVerification = () => {
         break;
     }
     return true;
+  };
+
+  // Normalize full name for comparison
+  const normalizeName = (name: string): string => {
+    return name.toLowerCase().trim().replace(/\s+/g, ' ');
+  };
+
+  // Format date to YYYY-MM-DD for comparison
+  const formatDate = (dateString: string): string => {
+    if (!dateString) return '';
+    const s = dateString.toString().trim();
+
+    // Handle YYYY-MM-DD or YYYY/MM/DD
+    const ymd = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+    if (ymd) {
+      const [, y, m, d] = ymd;
+      const mm = m.padStart(2, '0');
+      const dd = d.padStart(2, '0');
+      return `${y}-${mm}-${dd}`;
+    }
+
+    // Handle DD-MM-YYYY or DD/MM/YYYY
+    const dmy = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+    if (dmy) {
+      const [, d, m, y] = dmy;
+      const mm = m.padStart(2, '0');
+      const dd = d.padStart(2, '0');
+      return `${y}-${mm}-${dd}`;
+    }
+
+    // Fallback to Date parsing
+    const date = new Date(s);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+
+    return '';
+  };
+
+  const formatReadableDate = (dateString: string) => {
+    const norm = formatDate(dateString);
+    if (!norm) return '';
+    const [y, m, d] = norm.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  const toTitleCase = (s = '') =>
+    s
+      .toLowerCase()
+      .split(' ')
+      .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ''))
+      .join(' ');
+
+  // Verify NIN and validate against personal info
+  const handleVerifyNin = async () => {
+    if (!ninNumber.trim()) {
+      showError("Please enter your NIN number");
+      return;
+    }
+
+    // Validate NIN format (11 digits)
+    if (!/^\d{11}$/.test(ninNumber)) {
+      showError("NIN must be exactly 11 digits");
+      return;
+    }
+
+    setVerifyingNin(true);
+    try {
+      const response = await verifyNinNumber(ninNumber);
+      
+      if (response?.data?.status === 'error') {
+        showError(response.data.message || "NIN verification failed");
+        return;
+      }
+
+      // Get verification data
+      const verificationData = response.data?.data?.verificationData?.data;
+      if (!verificationData) {
+        showError("Invalid response from verification service");
+        return;
+      }
+
+      // Extract and normalize names from verification data
+      const verifiedFirstName = (verificationData.firstname || '').toLowerCase().trim();
+      const verifiedSurname = (verificationData.surname || verificationData.lastname || '').toLowerCase().trim();
+      const verifiedFullName = `${verifiedFirstName} ${verifiedSurname}`.trim();
+
+      // Normalize personal info names
+      const personalFullName = normalizeName(personalInfo?.fullName || '');
+
+      // Extract DOB from verification data (could be 'birthdate' or 'dob')
+      const verifiedDob = verificationData.birthdate || verificationData.dob;
+      const personalDob = formatDate(personalInfo?.dateOfBirth || '');
+
+      // Check if names match
+      const namesMatch = personalFullName.includes(verifiedFullName) || 
+                        verifiedFullName.includes(personalFullName) ||
+                        personalFullName === verifiedFullName;
+
+      // Check if DOB matches
+      const dobMatches = verifiedDob && formatDate(verifiedDob) === personalDob;
+
+      if (!namesMatch || !dobMatches) {
+        Alert.alert(
+          "Information Mismatch",
+          `The information from your NIN does not match what you provided:\n\n` +
+          `${!namesMatch ? `• Full Name: Expected "${personalInfo?.fullName}" but NIN shows "${verifiedFullName}"\n` : ''}` +
+          `${!dobMatches ? `• Date of Birth: Expected "${personalDob}" but NIN shows "${verifiedDob}"\n` : ''}` +
+          `\nPlease go back and correct your personal information.`,
+          [
+            {
+              text: "Go Back to Personal Info",
+              onPress: () => router.push("rider/personal-info"),
+              style: "default"
+            },
+            {
+              text: "Cancel",
+              style: "cancel"
+            }
+          ]
+        );
+        return;
+      }
+
+      // If all matches, save verification data and proceed
+      await AsyncStorage.setItem('ninVerificationData', JSON.stringify({
+        nin: ninNumber,
+        verificationData: verificationData,
+        verifiedAt: new Date().toISOString()
+      }));
+
+      // Save verified state for UI
+      setVerifiedNin(true);
+      setVerifiedInfo({ fullName: toTitleCase(verifiedFullName), dob: formatDate(verifiedDob) });
+
+      showSuccess("NIN verified successfully!");
+      // Can now allow document upload
+    } catch (error: any) {
+      console.error('NIN verification error:', error);
+      showError(error?.message || "Failed to verify NIN. Please try again.");
+    } finally {
+      setVerifyingNin(false);
+    }
   };
 
   const handleImagePick = async (documentType: keyof DocumentUpload) => {
@@ -156,13 +302,25 @@ const KYCVerification = () => {
 
 
   const handleSubmit = async () => {
-    // Validate required fields
-    if (!ninNumber || !idType) {
-      Alert.alert("Missing Information", "Please provide NIN number and ID type.");
+    // Validate NIN is verified first
+    if (!ninNumber || !/^\d{11}$/.test(ninNumber)) {
+      Alert.alert("Missing Information", "Please verify your NIN first by clicking the 'Verify NIN' button.");
+      return;
+    }
+
+    // Check if NIN was verified (has verification data in storage)
+    try {
+      const verificationData = await AsyncStorage.getItem('ninVerificationData');
+      if (!verificationData) {
+        Alert.alert("Missing Information", "Please verify your NIN first by clicking the 'Verify NIN' button.");
+        return;
+      }
+    } catch (e) {
+      Alert.alert("Error", "Failed to check NIN verification status");
       return;
     }
     
-    // Validate required documents (excluding addressProof which is optional)
+    // Validate required documents
     const requiredDocs = ['licensePhoto', 'profilePhoto', 'identityDocument'];
     const missingDocs = requiredDocs.filter(doc => !documents[doc as keyof DocumentUpload]);
     
@@ -175,7 +333,6 @@ const KYCVerification = () => {
     try {
       const form = new FormData();
       form.append("ninNumber", ninNumber);
-      form.append("idType", idType);
 
       // helper to append compressed file
       const fileAppend = async (fieldName: string, uri: string) => {
@@ -313,29 +470,51 @@ const KYCVerification = () => {
 
       {/* Document Upload Section */}
       <ScrollView className="flex-1 px-4 py-6">
-              {/* NIN and ID Type */}
+              {/* NIN Input and Verification */}
               <View className="mb-6">
-                <Text className="font-RalewayBold text-base text-black mb-2">NIN / ID Number</Text>
-                <TextInput
-                  value={ninNumber}
-                  onChangeText={setNinNumber}
-                  placeholder="Enter NIN or ID number"
-                  className="bg-gray-50 p-4 rounded-xl font-NunitoRegular text-black"
-                />
-              </View>
-
-              <View className="mb-6">
-                <Text className="font-RalewayBold text-base text-black mb-2">ID Type</Text>
+                <Text className="font-RalewayBold text-base text-black mb-2">NIN Number</Text>
                 <View className="flex-row gap-2">
-                  {['NIN', 'Passport', 'Driver License'].map((t) => (
-                    <TouchableOpacity
-                      key={t}
-                      onPress={() => setIdType(t)}
-                      className={`px-4 py-2 rounded-full ${idType === t ? 'bg-primary-100' : 'bg-gray-100'}`}>
-                      <Text className={`${idType === t ? 'text-white' : 'text-gray-800'} font-NunitoMedium`}>{t}</Text>
-                    </TouchableOpacity>
-                  ))}
+                  <TextInput
+                    value={ninNumber}
+                    onChangeText={setNinNumber}
+                    placeholder="Enter 11-digit NIN"
+                    keyboardType="numeric"
+                    maxLength={11}
+                    editable={!verifyingNin}
+                    className="flex-1 bg-gray-50 p-4 rounded-xl font-NunitoRegular text-black"
+                  />
+                  <TouchableOpacity
+                    onPress={handleVerifyNin}
+                    disabled={verifyingNin || !ninNumber || verifiedNin}
+                    className={`px-4 py-4 rounded-xl justify-center ${
+                      verifyingNin || !ninNumber
+                        ? "bg-gray-300"
+                        : verifiedNin
+                        ? "bg-green-500"
+                        : "bg-primary-100"
+                    }`}
+                  >
+                    {verifyingNin ? (
+                      <ActivityIndicator color="white" size="small" />
+                    ) : (
+                      <Ionicons name="checkmark-circle" size={24} color="white" />
+                    )}
+                  </TouchableOpacity>
                 </View>
+                <Text className="text-gray-600 text-xs mt-2 font-NunitoRegular">
+                  Your NIN will be verified against your personal information
+                </Text>
+
+                {verifiedNin && verifiedInfo && (
+                  <View className="mt-3 bg-green-50 p-3 rounded-lg">
+                    <Text className="font-NunitoMedium text-sm text-green-800">
+                      Verified Name: {verifiedInfo.fullName}
+                    </Text>
+                    <Text className="font-NunitoRegular text-sm text-green-800 mt-1">
+                      Date of Birth: {formatReadableDate(verifiedInfo.dob || '')}
+                    </Text>
+                  </View>
+                )}
               </View>
         <DocumentUploadButton
           title="Profile Photo"
@@ -382,9 +561,9 @@ const KYCVerification = () => {
         {/* Submit Button */}
         <TouchableOpacity
           onPress={handleSubmit}
-          disabled={uploading}
+          disabled={uploading || !verifiedNin}
           className={`py-4 rounded-xl mt-4 mb-32 ${
-            uploading ? "bg-gray-400" : "bg-primary-100"
+            uploading || !verifiedNin ? "bg-gray-400" : "bg-primary-100"
           }`}
         >
           {uploading ? (

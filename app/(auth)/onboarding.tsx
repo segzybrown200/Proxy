@@ -3,13 +3,13 @@ import {
   View,
   Text,
   SafeAreaView,
-  ImageBackground,
   TouchableOpacity,
   ScrollView,
   NativeSyntheticEvent,
   NativeScrollEvent,
   Dimensions,
 } from "react-native";
+import { VideoView, useVideoPlayer } from "expo-video";
 import CustomButton from "../../components/CustomButton";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -22,27 +22,33 @@ const slides = [
     title: "Discover Local",
     highlight: "Marketplace",
     subtitle: "Find sellers, compare prices and get fast pickup or delivery from nearby vendors.",
-    image: "https://plus.unsplash.com/premium_photo-1683746792239-6ce8cdd3ac78?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     key: "s2",
     title: "Secure",
     highlight: "Payment",
     subtitle: "Safe and fast payment options with multiple methods to choose from.",
-    image: "https://plus.unsplash.com/premium_vector-1720931652710-7bfbe41ae29a?q=80&w=580&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     key: "s3",
     title: "Fast & Easy",
     highlight: "Shopping",
     subtitle: "Browse, buy, and get your items delivered or picked up quickly.",
-    image: "https://plus.unsplash.com/premium_vector-1746389251501-cb01c4aaf304?q=80&w=742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
 ];
+
+const backgroundVideo = "https://res.cloudinary.com/doemqvrzy/video/upload/v1771377240/Proxy_Video_2_loxnuo.mp4";
 
 const Onboarding = () => {
   const [index, setIndex] = useState(0);
   const scrollRef = useRef<ScrollView | null>(null);
+
+  // Create a single video player for background
+  const player = useVideoPlayer(backgroundVideo, (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
 
   const handleVisitor = () => router.push({ pathname: "/(auth)/location", params: { visitor: "true" } });
 
@@ -62,6 +68,15 @@ const Onboarding = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-black">
+      {/* Background Video - Plays continuously */}
+      <VideoView
+        player={player}
+        style={{ position: "absolute", width: "100%", height: "100%" }}
+        contentFit="cover"
+        nativeControls={false}
+      />
+
+      {/* Slides on top of video */}
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -69,15 +84,11 @@ const Onboarding = () => {
         showsHorizontalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={16}
+        style={{ flex: 1 }}
       >
-      <StatusBar style="light" />
+        <StatusBar style="light" />
         {slides.map((slide) => (
-          <ImageBackground
-            key={slide.key}
-            source={{ uri: slide.image }}
-            style={{ width, flex: 1 }}
-            resizeMode="cover"
-          >
+          <View key={slide.key} style={{ width, flex: 1 }}>
             <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}>
               <SafeAreaView className="flex-1">
                 <View className="flex-row items-center justify-between px-6 pt-6">
@@ -121,7 +132,7 @@ const Onboarding = () => {
                 </View>
               </SafeAreaView>
             </View>
-          </ImageBackground>
+          </View>
         ))}
       </ScrollView>
     </SafeAreaView>
