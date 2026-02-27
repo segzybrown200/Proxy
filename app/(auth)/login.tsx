@@ -52,14 +52,11 @@ const Login = () => {
     loginUser(FinalData)
       .then((response) => {
         setisSubmitting(false);
-        console.log("Login successful:", response.data);
-        console.log(response.data)
         dispatch(loginState(response.data));
         // router.replace("/(app)/home");
       })
       .catch((error) => {
         setisSubmitting(false);
-        console.log("Login error:", error);
         showError(error.message);
       });
   };

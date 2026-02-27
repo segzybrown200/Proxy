@@ -1,5 +1,5 @@
 import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getNewListings, getOrders, getPopularListings, getRiderHistory, getRiderStatus, getSingleDeliveryOrder, getWalletBalance } from "api/api"
-import { getWalletTransactions } from "api/api"
+import { getWalletTransactions, getTransactionHistory } from "api/api"
 import axios from "axios";
 import useSWR  from "swr"
 import { SWRConfiguration } from "swr"
@@ -327,7 +327,7 @@ export const useWalletTransactions = (token?: string, params?: { limit?: number;
 
   const key = token ? `/wallet/transactions?limit=${params?.limit || 50}&skip=${params?.skip || 0}` : null;
 
-  const { data, error, isLoading, mutate }: any = useSWR(
+  const { data, error, isLoading, mutate }:any = useSWR(
     key,
     () => fetcher(token, params),
     {
@@ -346,5 +346,32 @@ export const useWalletTransactions = (token?: string, params?: { limit?: number;
     isLoading,
     isError: !!error,
     mutate,
+    refetch: () => mutate(), // Expose refetch function
+  };
+};
+
+// hook for combined transaction history (orders + wallet)
+export const useTransactionHistory = (token?: string, params?: { limit?: number; skip?: number; type?: string; status?: string; startDate?: string; endDate?: string }) => {
+  const fetcher = (token?: string, params?: any) => getTransactionHistory(token, params);
+  const key = token ? `/payments/transactions?limit=${params?.limit || 50}&skip=${params?.skip || 0}` : null;
+
+  const { data, error, isLoading, mutate }: any = useSWR(
+    key,
+    () => fetcher(token, params),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true,
+    }
+  );
+
+  const txs = data?.data?.data?.transactions || data?.transactions || data?.data || [];
+
+  return {
+    transactions: Array.isArray(txs) ? txs : [],
+    isLoading,
+    isError: !!error,
+    mutate,
+    refetch: () => mutate(),
   };
 };

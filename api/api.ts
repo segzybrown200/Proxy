@@ -154,6 +154,15 @@ export const createStripePaymentIntent = async(data:any, token?:string) => {
     throw error.response?.data || error;
   });
 }
+export const createStripeWalletIntent = async(data:any, token?:string) => {
+  return api.post(`/payments/wallet/stripe-intent`, data, {
+    headers: token
+      ? { Authorization: `Bearer ${token}` }
+      : undefined,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
 
 export const updateUser = async(data: {name?: string, email?: string, phone?: string}, token: string) => {
   return api.put('/auth/user/update', data, {
@@ -311,16 +320,15 @@ export const verifyNinNumber = async(nin: string) => {
 
 // Wallet APIs
 export const fundWalletPaystack = async(data: { amount: number; reference: string }, token?: string) => {
-  console.log(data)
+
   return api.post(`/payments/wallet/fund-paystack`, data, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   }).catch((error) => {
-    console.log(error)
     throw error.response?.data || error;
   });
 }
 
-export const fundWalletStripe = async(data: { amount: number; paymentIntentId: string }, token?: string) => {
+export const fundWalletStripe = async(data: { amountNgn: number; paymentIntentId: string }, token?: string) => {
   return api.post(`/payments/wallet/fund-stripe`, data, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   }).catch((error) => {
@@ -338,6 +346,16 @@ export const getWalletBalance = async(token?: string) => {
 
 export const getWalletTransactions = async(token?: string, params?: { limit?: number; skip?: number }) => {
   return api.get(`/payments/wallet/history`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    params,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+// combined order + wallet transaction history for customer
+export const getTransactionHistory = async(token?: string, params?: { limit?: number; skip?: number; type?: string; status?: string; startDate?: string; endDate?: string }) => {
+  return api.get(`/payments/customer/transactions`, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     params,
   }).catch((error) => {

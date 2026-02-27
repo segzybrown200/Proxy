@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import CustomButton from "../../components/CustomButton";
@@ -41,14 +42,35 @@ const backgroundVideo = "https://res.cloudinary.com/doemqvrzy/video/upload/v1771
 
 const Onboarding = () => {
   const [index, setIndex] = useState(0);
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const scrollRef = useRef<ScrollView | null>(null);
 
   // Create a single video player for background
   const player = useVideoPlayer(backgroundVideo, (player) => {
     player.loop = true;
     player.muted = true;
-    player.play();
+    // Don't autoplay - wait for ready event
   });
+
+  useEffect(() => {
+    if (!player) return;
+
+    // Listen to status changes
+    const subscription = player.addListener('statusChange', (status) => {
+      if (status.status === 'readyToPlay') {
+        setIsVideoReady(true);
+        // Start playing after it's loaded
+        if (!player.playing) {
+          player.play();
+        }
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [player]);
 
   const handleVisitor = () => router.push({ pathname: "/(auth)/location", params: { visitor: "true" } });
 
@@ -69,12 +91,26 @@ const Onboarding = () => {
   return (
     <SafeAreaView className="flex-1 bg-black">
       {/* Background Video - Plays continuously */}
-      <VideoView
-        player={player}
-        style={{ position: "absolute", width: "100%", height: "100%" }}
-        contentFit="cover"
-        nativeControls={false}
-      />
+      <View style={{ position: "absolute", width: "100%", height: "100%", overflow: "hidden" }}>
+        <VideoView
+          player={player}
+          style={{ width: "100%", height: "100%" }}
+          contentFit="cover"
+          nativeControls={false}
+        />
+        
+        {/* Loading indicator while video buffers */}
+        {!isVideoReady && !videoError && (
+          <View style={{ position: "absolute", width: "100%", height: "100%", justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)" }}>
+            <ActivityIndicator size="large" color="#ffffff" />
+          </View>
+        )}
+
+        {/* Fallback overlay if video fails */}
+        {videoError && (
+          <View style={{ position: "absolute", width: "100%", height: "100%", backgroundColor: "#1a1a1a" }} />
+        )}
+      </View>
 
       {/* Slides on top of video */}
       <ScrollView

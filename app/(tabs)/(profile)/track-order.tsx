@@ -12,12 +12,24 @@ import {
   Animated,
 } from "react-native";
 import { Image } from "expo-image";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import MapView, { Marker, Polyline, Circle } from "react-native-maps";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import io from "socket.io-client";
 
 const socket = io("https://proxy-backend-6of2.onrender.com");
+
+// Helper function to calculate distance between two coordinates (Haversine formula)
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 const TrackOrderScreen = () => {
   const { order } = useLocalSearchParams();
@@ -25,16 +37,23 @@ const TrackOrderScreen = () => {
   const mapRef = useRef<MapView>(null);
 
   const [riderLocation, setRiderLocation] = useState<any>(null);
+  const [vendorLocation, setVendorLocation] = useState<any>(null);
   const [currentStatus, setCurrentStatus] = useState(parsedOrder.delivery?.status || "PENDING");
   // const [riderInfo, setRiderInfo] = useState<any>(null);
 
-  const riderInfo = parsedOrder?.delivery?.rider
-
   const delivery = parsedOrder.delivery;
+  const isSelfDelivery = delivery?.isSelfDelivery;
+  const riderInfo = isSelfDelivery ? null : parsedOrder?.delivery?.rider;
+  const vendorInfo = parsedOrder?.vendor;
+  const otp = delivery?.otp;
   const isDigital = parsedOrder.isDigital;
+
 
   // Animate marker smoothly
   const riderAnim = useRef(new Animated.ValueXY()).current;
+  const vendorAnim = useRef(new Animated.ValueXY()).current;
+
+  // console.log(JSON.stringify(parsedOrder, null, 2))
 
   useEffect(() => {
     if (!delivery?.id) return;
@@ -57,6 +76,35 @@ const TrackOrderScreen = () => {
       }
     });
 
+    socket.on("delivery_vendor_on_the_way", (data) => {
+      if (data?.deliveryId === delivery.id) {
+        const newVendorLocation = { latitude: data.vendorLat, longitude: data.vendorLng };
+  
+        setVendorLocation(newVendorLocation);
+        Animated.timing(vendorAnim, {
+          toValue: { x: data.vendorLat, y: data.vendorLng },
+          duration: 800,
+          useNativeDriver: false,
+        }).start();
+      }
+    });
+
+    // console.log(vendorLocation)
+
+    socket.on("vendor_location_update", (data) => {
+      console.log("Vendor data",data)
+      if (data?.vendorId === vendorInfo?.id && isSelfDelivery) {
+        const newVendorLocation = { latitude: data.lat, longitude: data.lng };
+        console.log("new Location",newVendorLocation)
+        setVendorLocation(newVendorLocation);
+        Animated.timing(vendorAnim, {
+          toValue: { x: data.lat, y: data.lng },
+          duration: 800,
+          useNativeDriver: false,
+        }).start();
+      }
+    });
+
     // socket.on("rider_assigned", (data) => {
     //   if (data?.deliveryId === delivery.id) {
     //     setRiderInfo(data.rider);
@@ -66,6 +114,8 @@ const TrackOrderScreen = () => {
     return () => {
       socket.off("delivery_location_update");
       socket.off("delivery_status_update");
+      socket.off("delivery_vendor_on_the_way");
+      socket.off("vendor_location_update");
       socket.off("rider_assigned");
     };
   }, [delivery]);
@@ -130,8 +180,12 @@ const TrackOrderScreen = () => {
     longitude: Number(delivery?.dropoffLng) || 0,
   };
   const riderCords = {
-    latitude: Number(parsedOrder?.rider?.currentLat) || 0,
-    longitude: Number(parsedOrder?.rider?.currentLng) || 0,
+    latitude: isSelfDelivery 
+      ? Number(delivery?.vendorLat) || 0 
+      : Number(parsedOrder?.rider?.currentLat) || 0,
+    longitude: isSelfDelivery 
+      ? Number(delivery?.vendorLng) || 0 
+      : Number(parsedOrder?.rider?.currentLng) || 0,
   }
   const statusSteps = ["PENDING","SEARCH_OF_RIDER", "ACCEPTED", "PICKED_UP", "IN_TRANSIT", "DELIVERED"];
   const activeIndex = statusSteps.indexOf(currentStatus);
@@ -167,22 +221,87 @@ const TrackOrderScreen = () => {
           }}
           onMapReady={() => {
             if (mapRef.current) {
-              mapRef.current.fitToCoordinates([pickup, dropoff], {
+              const vendorStartCoord = {
+                latitude: Number(delivery?.vendorLat) || 0,
+                longitude: Number(delivery?.vendorLng) || 0,
+              };
+              const coordsToFit = isSelfDelivery 
+                ? [vendorStartCoord, dropoff]
+                : [pickup, dropoff];
+              mapRef.current.fitToCoordinates(coordsToFit, {
                 edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
                 animated: true,
               });
             }
           }}
         >
-          <Marker coordinate={pickup} title="Pickup" pinColor="blue" />
+          {!isSelfDelivery && (
+            <Marker coordinate={pickup} title="Pickup" pinColor="blue" />
+          )}
           <Marker coordinate={dropoff} title="Dropoff" pinColor="green" />
-          {riderLocation && (
-            <Marker coordinate={riderLocation || riderCords} title="Rider" pinColor="red" />
+          {isSelfDelivery && (
+            <Marker 
+              coordinate={{
+                latitude: Number(delivery?.vendorLat) || 0,
+                longitude: Number(delivery?.vendorLng) || 0,
+              }}
+              title="Vendor Starting Location" 
+              pinColor="purple"
+              description="Where vendor is"
+            />
+          )}
+          {vendorLocation && isSelfDelivery && (
+            <>
+              <Circle
+                center={vendorLocation}
+                radius={50}
+                fillColor="rgba(255, 165, 0, 0.2)"
+                strokeColor="rgba(255, 165, 0, 0.5)"
+                strokeWidth={2}
+              />
+              <Marker 
+                coordinate={vendorLocation}
+              >
+                <View className="items-center">
+                  <View className="bg-orange-500 px-2 py-1 rounded-md mb-1">
+                    <Text className="text-white font-bold text-xs">Vendor</Text>
+                  </View>
+                  <View className="w-4 h-4 bg-orange-500 rounded-full border-2 border-white" style={{shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.3, shadowRadius: 2, elevation: 5}} />
+                </View>
+              </Marker>
+            </>
+          )}
+          {riderLocation && !isSelfDelivery && (
+            <>
+              <Circle
+                center={riderLocation}
+                radius={50}
+                fillColor="rgba(255, 0, 0, 0.2)"
+                strokeColor="rgba(255, 0, 0, 0.5)"
+                strokeWidth={2}
+              />
+              <Marker 
+                coordinate={riderLocation || riderCords}
+              >
+                <View className="items-center">
+                  <View className="bg-red-500 px-2 py-1 rounded-md mb-1">
+                    <Text className="text-white font-bold text-xs">Rider</Text>
+                  </View>
+                  <View className="w-4 h-4 bg-red-500 rounded-full border-2 border-white" style={{shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.3, shadowRadius: 2, elevation: 5}} />
+                </View>
+              </Marker>
+            </>
           )}
           <Polyline
             coordinates={[
-              pickup,
-              ...(riderLocation ? [riderLocation] : []),
+              isSelfDelivery
+                ? {
+                    latitude: Number(delivery?.vendorLat) || 0,
+                    longitude: Number(delivery?.vendorLng) || 0,
+                  }
+                : pickup,
+              ...(vendorLocation && isSelfDelivery ? [vendorLocation] : []),
+              ...(riderLocation && !isSelfDelivery ? [riderLocation] : []),
               dropoff,
             ]}
             strokeColor="#004CFF"
@@ -218,13 +337,16 @@ const TrackOrderScreen = () => {
         </View>
 
         <ScrollView className="flex-1 px-5">
-          {riderInfo && (
+          {/* Rider or Vendor Info */}
+          {(riderInfo || vendorInfo) && (
             <View className="flex-row items-center mb-6 mt-2">
               <Image
                 source={{
-                  uri:
-                    riderInfo?.kyc?.selfieUrl ||
-                    "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                  uri: isSelfDelivery
+                    ? vendorInfo?.image?.selfieUrl ||
+                      "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    : riderInfo?.kyc?.selfieUrl ||
+                      "https://cdn-icons-png.flaticon.com/512/149/149071.png",
                 }}
                 className="w-12 h-12 rounded-full mr-3"
                 contentFit="cover"
@@ -232,29 +354,190 @@ const TrackOrderScreen = () => {
               />
               <View className="flex-1">
                 <Text className="font-NunitoBold text-black text-lg">
-                  {riderInfo?.fullName}
+                  {isSelfDelivery ? vendorInfo?.name : riderInfo?.fullName}
                 </Text>
-                <Text className="font-NunitoMedium text-gray-500">
-                  {riderInfo.vehicleType || "Bike"}
-                </Text>
-                <View className="flex flex-row gap-3">
-                   <Text className="font-NunitoMedium text-gray-500">
-                  {riderInfo?.vehicle?.model}
-                </Text>
-                   <Text className="font-NunitoMedium text-gray-500">
-                  PlateNumber: {riderInfo?.vehicle?.plateNumber}
-                </Text>
-                </View>
-               
+                {!isSelfDelivery && (
+                  <>
+                    <Text className="font-NunitoMedium text-gray-500">
+                      {riderInfo?.vehicleType || "Bike"}
+                    </Text>
+                    <View className="flex flex-row gap-3">
+                      <Text className="font-NunitoMedium text-gray-500">
+                        {riderInfo?.vehicle?.model}
+                      </Text>
+                      <Text className="font-NunitoMedium text-gray-500">
+                        PlateNumber: {riderInfo?.vehicle?.plateNumber}
+                      </Text>
+                    </View>
+                  </>
+                )}
+                {isSelfDelivery && (
+                  <Text className="font-NunitoMedium text-gray-500">
+                    {vendorInfo?.email}
+                  </Text>
+                )}
               </View>
               <TouchableOpacity
-                onPress={() => Linking.openURL(`tel:${riderInfo.phone}`)}
+                onPress={() =>
+                  Linking.openURL(
+                    `tel:${isSelfDelivery ? vendorInfo?.phone : riderInfo?.phone}`
+                  )
+                }
                 className="bg-primary-100 px-3 py-3 rounded-full"
               >
                 <Ionicons name="call-outline" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
           )}
+
+          {/* OTP Display */}
+          {otp && (
+            <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+              <Text className="font-NunitoMedium text-gray-600 mb-2">
+                Delivery OTP
+              </Text>
+              <Text className="font-NunitoBold text-2xl text-blue-600 tracking-widest">
+                {otp}
+              </Text>
+              <Text className="font-NunitoMedium text-gray-500 mt-2 text-xs">
+                Share this code with the {isSelfDelivery ? "vendor" : "rider"} when done with delivery/service
+              </Text>
+            </View>
+          )}
+
+          {/* Location Info Card */}
+          <View className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
+            <Text className="font-NunitoBold text-black mb-4">Location & Distance Info</Text>
+            
+            {/* Legend */}
+            <View className="mb-4 border-b border-gray-300 pb-4">
+              <Text className="font-NunitoBold text-gray-700 mb-2 text-sm">Map Legend:</Text>
+              <View className="flex-row items-center mb-2">
+                <View style={{ width: 16, height: 16, backgroundColor: '#9333EA', borderRadius: 8, marginRight: 8 }} />
+                <Text className="font-NunitoMedium text-gray-600 text-sm">
+                  {isSelfDelivery ? "Vendor starting location" : "Pickup location"}
+                </Text>
+              </View>
+              <View className="flex-row items-center mb-2">
+                <View style={{ width: 16, height: 16, backgroundColor: '#22C55E', borderRadius: 8, marginRight: 8 }} />
+                <Text className="font-NunitoMedium text-gray-600 text-sm">Dropoff location</Text>
+              </View>
+              {isSelfDelivery && (
+                <View className="flex-row items-center mb-2">
+                  <View style={{ width: 16, height: 16, backgroundColor: '#FF9500', borderRadius: 8, marginRight: 8 }} />
+                  <Text className="font-NunitoMedium text-gray-600 text-sm">Vendor current location (en route)</Text>
+                </View>
+              )}
+              {!isSelfDelivery && (
+                <View className="flex-row items-center">
+                  <View style={{ width: 16, height: 16, backgroundColor: '#EF4444', borderRadius: 8, marginRight: 8 }} />
+                  <Text className="font-NunitoMedium text-gray-600 text-sm">Rider current location</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Current Location Info */}
+            {(vendorLocation || riderLocation) && (
+              <View>
+                <Text className="font-NunitoBold text-gray-700 mb-3 text-sm">
+                  {isSelfDelivery ? "Vendor" : "Rider"} Status
+                </Text>
+                
+                {/* Real-time Location Section */}
+                <View className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3">
+                  <Text className="font-NunitoBold text-orange-700 text-sm mb-2">Real-time Location</Text>
+                  
+                  <Text className="font-NunitoMedium text-gray-600 text-xs mb-1">Distance from Dropoff</Text>
+                  <Text className="font-NunitoBold text-lg text-orange-600 mb-2">
+                    {isSelfDelivery && vendorLocation
+                      ? calculateDistance(
+                          vendorLocation.latitude,
+                          vendorLocation.longitude,
+                          dropoff.latitude,
+                          dropoff.longitude
+                        ).toFixed(2)
+                      : riderLocation && !isSelfDelivery
+                      ? calculateDistance(
+                          riderLocation.latitude,
+                          riderLocation.longitude,
+                          dropoff.latitude,
+                          dropoff.longitude
+                        ).toFixed(2)
+                      : "0.00"} km away
+                  </Text>
+
+                  <View className="flex-row justify-between bg-white rounded p-2">
+                    <Text className="font-NunitoMedium text-gray-700 text-xs">
+                      Lat: {isSelfDelivery && vendorLocation 
+                        ? vendorLocation.latitude.toFixed(4)
+                        : riderLocation && !isSelfDelivery
+                        ? riderLocation.latitude.toFixed(4)
+                        : "N/A"}
+                    </Text>
+                    <Text className="font-NunitoMedium text-gray-700 text-xs">
+                      Lng: {isSelfDelivery && vendorLocation
+                        ? vendorLocation.longitude.toFixed(4)
+                        : riderLocation && !isSelfDelivery
+                        ? riderLocation.longitude.toFixed(4)
+                        : "N/A"}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Initial Location Section */}
+                <View className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
+                  <Text className="font-NunitoBold text-purple-700 text-sm mb-2">Initial Location</Text>
+                  
+                  <Text className="font-NunitoMedium text-gray-600 text-xs mb-1">Distance from Dropoff</Text>
+                  <Text className="font-NunitoBold text-lg text-purple-600 mb-2">
+                    {isSelfDelivery
+                      ? calculateDistance(
+                          Number(delivery?.vendorLat) || 0,
+                          Number(delivery?.vendorLng) || 0,
+                          dropoff.latitude,
+                          dropoff.longitude
+                        ).toFixed(2)
+                      : calculateDistance(
+                          pickup.latitude,
+                          pickup.longitude,
+                          dropoff.latitude,
+                          dropoff.longitude
+                        ).toFixed(2)} km away
+                  </Text>
+
+                  <View className="flex-row justify-between bg-white rounded p-2">
+                    <Text className="font-NunitoMedium text-gray-700 text-xs">
+                      Lat: {isSelfDelivery 
+                        ? (Number(delivery?.vendorLat) || 0).toFixed(4)
+                        : pickup.latitude.toFixed(4)}
+                    </Text>
+                    <Text className="font-NunitoMedium text-gray-700 text-xs">
+                      Lng: {isSelfDelivery
+                        ? (Number(delivery?.vendorLng) || 0).toFixed(4)
+                        : pickup.longitude.toFixed(4)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Dropoff Address */}
+                <View className="bg-white border border-green-200 rounded-lg p-3">
+                  <Text className="font-NunitoBold text-green-700 text-sm mb-2">Dropoff Details</Text>
+                  <Text className="font-NunitoMedium text-gray-600 text-xs mb-2">Address</Text>
+                  <Text className="font-NunitoMedium text-gray-800 text-sm mb-3">
+                    {delivery?.dropoffAddress || "N/A"}
+                  </Text>
+                  <View className="flex-row justify-between bg-gray-50 rounded p-2">
+                    <Text className="font-NunitoMedium text-gray-700 text-xs">
+                      Lat: {dropoff.latitude.toFixed(4)}
+                    </Text>
+                    <Text className="font-NunitoMedium text-gray-700 text-xs">
+                      Lng: {dropoff.longitude.toFixed(4)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+          </View>
 
           {/* Order Details */}
           <ScrollView horizontal={true} className="mb-5 ">
@@ -282,7 +565,7 @@ const TrackOrderScreen = () => {
           
           <View className="mt-3 border-t border-gray-300 pt-3 pb-5">
             <Text className="font-NunitoBold text-black">
-              Total: ₦{parsedOrder.transaction.amountPaid.toLocaleString()}
+              Total: ₦{parsedOrder?.transaction?.amountPaid.toLocaleString()}
             </Text>
             <Text className="font-NunitoBold text-black mt-1">
               Delivery Fare: ₦

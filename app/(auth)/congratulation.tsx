@@ -10,7 +10,6 @@ import { showError } from "utils/toast";
 const congratulation = () => {
   const select:any = useSelector(selectPendingUser)
   const dispatch = useDispatch()
-  console.log(select)
   useEffect(() => {
     if( select === null ) {
        setTimeout(() => {
@@ -22,10 +21,8 @@ const congratulation = () => {
          loginUser({email: select?.email, password: select?.password}).then((response)=>{
           dispatch(pendingUserLogout())
           
-        console.log("Logged in user:", response.data);
         dispatch(loginState(response.data));
       }).catch((error)=>{
-        console.log("Login error:", error);
         dispatch(pendingUserLogout())
         showError("Login failed. Please try logging in again.");
       })

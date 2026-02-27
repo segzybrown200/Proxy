@@ -23,7 +23,6 @@ const verifyOptions = () => {
     setisSubmitting(true);
     if(method === 'whatsapp'){
       sendOTPEmail({email: email as string, phone: phone as string, verifyOption: 'whatsapp'}).then((response) => {
-        console.log("OTP sent via WhatsApp:", response);
         setisSubmitting(false);
         router.push({pathname: `/(auth)/verify-email` , params: {email: email, phone: phone, verifyOption: 'whatsapp'}});
       }).catch((error) => {
@@ -33,12 +32,10 @@ const verifyOptions = () => {
       
     }else if(method === 'email'){
       sendOTPEmail({email: email as string, phone: phone as string, verifyOption: 'email'}).then((response) => {
-        console.log("OTP sent via Email:", response.data);
         setisSubmitting(false);
         router.push(`/(auth)/verify-email`);
         router.push({pathname: `/(auth)/verify-email` , params: {email: email, phone: phone, verifyOption: 'email'}});
       }).catch((error) => {
-        console.log(error)
         setisSubmitting(false);
         showError("Failed to send OTP via Email. Please try again.");
       });

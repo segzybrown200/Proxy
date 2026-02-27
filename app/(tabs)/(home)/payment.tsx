@@ -74,7 +74,6 @@ export default function PaymentScreen() {
  
 
   const handlePaymentSuccess = async (res: any) => {
-    console.log("✅ Payment Successful:", res);
     setShowPaystack(false);
     setLoading(true);
     const response = res["transactionRef"]["message"];
@@ -87,7 +86,6 @@ export default function PaymentScreen() {
         dropoffLng: addresses.length > 0 ? addresses[0].longitude : null,
         paymentType: "PAYSTACK"
       };
-      console.log(data)
       const token = user?.data?.token;
 
       orderPlaced(data, ref, token)
@@ -188,7 +186,7 @@ export default function PaymentScreen() {
 
       const resData = orderData.data || orderData;
 
-      console.log(resData)
+
       // assume success status in response
       dispatch(clearCart());
       router.replace('/(tabs)/(home)/congratulations');
@@ -232,7 +230,6 @@ export default function PaymentScreen() {
         if (!token) return;
         const res = await getWalletBalance(token);
         const data = res.data || res;
-        console.log(data)
         const w = data.data || data;
         if (w && typeof w.balance !== 'undefined') setWalletBalance(Number(w.balance));
       } catch (e) {
@@ -251,6 +248,8 @@ export default function PaymentScreen() {
       return;
     }
     setLoading(true);
+    
+  
     try {
       // Build order payload (same shape used by orderPlaced)
       const data = {
@@ -532,9 +531,9 @@ export default function PaymentScreen() {
             <Text className="text-gray-800 font-RalewaySemiBold">
               Pay with Card (Stripe)
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
-          {selectedMethod === "stripe" && (
+          {/* {selectedMethod === "stripe" && (
             <View className="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-200">
               <Text className="mb-2 text-gray-700">Card details</Text>
               <CardField
@@ -553,7 +552,7 @@ export default function PaymentScreen() {
                 </Text>
               )}
             </View>
-        </View>
+        // </View>
         )} */}
         </View>
 

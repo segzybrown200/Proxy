@@ -61,6 +61,12 @@ export default function ProfileScreen() {
       route: "wallet",
     },
     {
+      title: "Transactions",
+      icon: <MaterialCommunityIcons name="history" size={24} color="#0059F6" />,
+      color: "#0059F6",
+      route: "transactions",
+    },
+    {
       title: "Message",
       icon: <MaterialIcons name="message" size={24} color="#FF3B30" />,
       color: "#FF3B30",

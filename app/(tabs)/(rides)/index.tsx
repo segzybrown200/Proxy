@@ -51,7 +51,6 @@ const RiderDashboard = () => {
   const riderId = rider?.data?.id;
 
   // Handle new delivery notifications
-  console.log(incomingDeliveries)
   const handleNewDeliveryOffer = async (data: any) => {
 
 
@@ -73,7 +72,6 @@ const RiderDashboard = () => {
           // Already in current state?
           const existsInState = prev.some((d: any) => d.deliveryId === id);
           if (existsInState) {
-            console.log("Offer already present in state, ignoring:", id);
             continue;
           }
 
@@ -114,7 +112,6 @@ const RiderDashboard = () => {
 
   useEffect(() => {
     onSocketReady((socket) => {
-      console.log("🔗 Rider socket ready — listening for delivery offers");
       socket.on("new_delivery_offer", handleNewDeliveryOffer);
     });
 
@@ -126,17 +123,14 @@ const RiderDashboard = () => {
   useEffect(() => {
     // Only start the location updates if we have the riderId
     if (!riderId) {
-      console.log("Waiting for riderId...");
       return;
     }
 
-    console.log("Starting location updates for rider:", riderId);
     
     // Initial location update
     const updateLocation = async () => {
       try {
         const loc = await Location.getCurrentPositionAsync({});
-        console.log("Updating location for rider:", riderId);
         updateRiderLocation(loc.coords.latitude, loc.coords.longitude, riderId);
       } catch (err) {
         console.error("Failed to update location:", err);
@@ -150,7 +144,6 @@ const RiderDashboard = () => {
     const watch = setInterval(updateLocation, 20000);
 
     return () => {
-      console.log("Cleaning up location updates for rider:", riderId);
       clearInterval(watch);
     };
   }, [riderId]); // Add riderId as a dependency

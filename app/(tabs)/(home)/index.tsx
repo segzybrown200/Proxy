@@ -79,7 +79,6 @@ const index = () => {
       // Ensure device location services are enabled first
       try {
         const servicesEnabled = await Location.hasServicesEnabledAsync();
-        console.log(servicesEnabled)
         if (!servicesEnabled) {
           console.warn('Location services disabled');
           Alert.alert(
@@ -93,7 +92,6 @@ const index = () => {
           // restore stored address if available
           try {
             const stored = await AsyncStorage.getItem('userLocation');
-            console.log("stored",stored)
             if (stored) {
               const parsed = JSON.parse(stored);
               setUserAddress(parsed?.address || 'Unable to fetch location');
@@ -122,7 +120,6 @@ const index = () => {
         // restore cached address if available instead of showing an error string
         try {
           const stored = await AsyncStorage.getItem('userLocation');
-          console.log(stored)
           if (stored) {
             const parsed = JSON.parse(stored);
             setUserAddress(parsed?.address || 'No address found');
@@ -143,9 +140,7 @@ const index = () => {
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
       }), 15000);
-      console.log(loc)
       let address = "";
-      console.log(address)
       if (rev && rev.length > 0) {
         const place = rev[0];
         const parts: string[] = [];
@@ -161,7 +156,7 @@ const index = () => {
         address = `${loc.coords.latitude.toFixed(6)}, ${loc.coords.longitude.toFixed(6)}`;
       }
       setUserAddress(address);
-      console.log("address", address)
+
       await AsyncStorage.setItem(
         "userLocation",
         JSON.stringify({ address, coords: loc.coords })
@@ -217,7 +212,6 @@ const index = () => {
         mutate("/listings/new"),
       ]);
     } catch (e) {
-      console.log("Refresh error:", e);
     }
     setRefreshing(false);
   };
@@ -481,7 +475,7 @@ const index = () => {
                     onLoad={() => item?.id}
                     onError={(error) =>
                       console.log(
-                        "Popular Image load error:",
+                        "Image load error:",
                         error
                       )
                     }

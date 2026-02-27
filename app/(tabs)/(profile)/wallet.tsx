@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
-import { SafeAreaView, FlatList, View, TouchableOpacity, Text, Image, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, FlatList, View, TouchableOpacity, Text, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import WalletBalance from '../../../components/WalletBalance';
 import FundWallet from '../../../components/FundWallet';
 import StripeFundWallet from '../../../components/StripeFundWallet';
-import { useWalletTransactions } from '../../../hooks/useHooks';
+import { useWalletTransactions, useWalletBalance } from '../../../hooks/useHooks';
 import { useDispatch, useSelector } from 'react-redux';
 import { setTransactions, selectWalletTransactions } from '../../../global/walletSlice';
 import { selectUser } from '../../../global/authSlice';
@@ -14,8 +14,10 @@ const WalletScreen: React.FC = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser) as any;
   const token = user?.data?.token;
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { transactions: fetchedTxs, isLoading } = useWalletTransactions(token, { limit: 50, skip: 0 });
+  const { transactions: fetchedTxs, isLoading, mutate: mutateTransactions } = useWalletTransactions(token, { limit: 50, skip: 0 });
+  const { mutate: mutateBalance } = useWalletBalance(token);
   const transactions = useSelector(selectWalletTransactions) as any[];
 
   useEffect(() => {
@@ -23,6 +25,21 @@ const WalletScreen: React.FC = () => {
       dispatch(setTransactions(fetchedTxs));
     }
   }, [fetchedTxs, dispatch]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Refresh both balance and transactions
+      await Promise.all([
+        mutateBalance?.(),
+        mutateTransactions?.()
+      ]);
+    } catch (error) {
+      console.error('Error refreshing wallet:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   // console.log(user?.data?.token)
 
   return (
@@ -41,6 +58,14 @@ const WalletScreen: React.FC = () => {
         data={transactions}
         keyExtractor={(item: any) => item.id || item.reference || Math.random().toString()}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={['#0056FF']}
+            tintColor="#0056FF"
+          />
+        }
         ListHeaderComponent={() => (
           <View>
             {/* Balance Card */}
