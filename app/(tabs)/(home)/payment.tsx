@@ -30,7 +30,7 @@ import {
   selectCartItems,
   selectCartTotal,
 } from "global/listingSlice";
-import { orderPlaced, createStripePaymentIntent, chargeWallet, getWalletBalance, placeWalletOrder } from "api/api";
+import { orderPlaced, createStripePaymentIntent, chargeWallet, getWalletBalance, placeWalletOrder, getOrderPreview } from "api/api";
 import { showError } from "utils/toast";
 
 export default function PaymentScreen() {
@@ -49,15 +49,12 @@ export default function PaymentScreen() {
   const [addresses, setAddresses] = useState<Array<any>>([]);
   const isVistor = useSelector(selectIsVisitor);
   const dispatch = useDispatch();
-  const [shipping, setShipping] = useState("standard");
   const [loading, setLoading] = useState(false);
   const [showPaystack, setShowPaystack] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const paystackWebViewRef = useRef<paystackProps.PayStackRef>(null);
-  const [cardDetails, setCardDetails] = useState<any>(null);
-  const { confirmPayment } = useConfirmPayment();
-  const [stripeDebug, setStripeDebug] = useState<string | null>(null);
+  const [orderSummary, setOrderSummary] = useState<any>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const cartItems = useSelector(selectCartItems);
   const total = useSelector(selectCartTotal);
   const user: any = useSelector((state: RootState) => state.auth.user);
@@ -145,16 +142,16 @@ export default function PaymentScreen() {
         return;
       }
 
-      if (selectedMethod === "paystack") {
-        setShowPaystack(true);
-        return;
-      }
+      // if (selectedMethod === "paystack") {
+      //   setShowPaystack(true);
+      //   return;
+      // }
 
-      if (selectedMethod === "stripe") {
-        // Proceed with Stripe flow
-        initiateStripePayment();
-        return;
-      }
+      // if (selectedMethod === "stripe") {
+      //   // Proceed with Stripe flow
+      //   initiateStripePayment();
+      //   return;
+      // }
       if (selectedMethod === "wallet") {
         initiateWalletPayment();
         return;
@@ -176,20 +173,30 @@ export default function PaymentScreen() {
         dropoffAddress: addresses.length > 0 ? addresses[0].address : "",
         dropoffLat: addresses.length > 0 ? addresses[0].latitude : null,
         dropoffLng: addresses.length > 0 ? addresses[0].longitude : null,
-        paymentType: "WALLET",
-        amountPaidByCustomer: total
+        paymentType: "WALLET"
       };
 
-      // Call backend to charge wallet and create order atomically
-
-      const orderData = await placeWalletOrder(data, token);
-
-      const resData = orderData.data || orderData;
-
-
-      // assume success status in response
-      dispatch(clearCart());
-      router.replace('/(tabs)/(home)/congratulations');
+      // Fetch order preview with delivery fees
+      try {
+        const preview = await getOrderPreview(data, token);
+        const summaryData = preview?.data?.data || preview?.data || preview;
+        setOrderSummary({
+          itemsTotal: summaryData?.itemsTotal || total,
+          deliveryFee: summaryData?.deliveryFee || 0,
+          total: summaryData?.total || summaryData?.totalAmount || total,
+          items: cartItems,
+          dropoffAddress: data.dropoffAddress,
+          dropoffLat: data.dropoffLat,
+          dropoffLng: data.dropoffLng
+        });
+        setShowConfirmation(true);
+      } catch (previewErr) {
+        // Fallback: proceed directly if preview endpoint not available
+        console.warn('Preview failed, proceeding with order', previewErr);
+        const orderData = await placeWalletOrder(data, token);
+        dispatch(clearCart());
+        router.replace('/(tabs)/(home)/congratulations');
+      }
     } catch (err: any) {
       console.warn('Wallet payment error', err);
       const message = err?.response?.data?.message || err?.message || 'Wallet payment failed';
@@ -205,23 +212,61 @@ export default function PaymentScreen() {
       setLoading(false);
     }
   };
+
+  const confirmWalletPayment = async () => {
+    if (!orderSummary) return;
+    
+    setLoading(true);
+    try {
+      const token = user?.data?.token;
+      const data = {
+        items: orderSummary.items,
+        dropoffAddress: orderSummary.dropoffAddress,
+        dropoffLat: orderSummary.dropoffLat,
+        dropoffLng: orderSummary.dropoffLng,
+        paymentType: "WALLET"
+      };
+
+      await placeWalletOrder(data, token);
+      setShowConfirmation(false);
+      setOrderSummary(null);
+      dispatch(clearCart());
+      router.replace('/(tabs)/(home)/congratulations');
+    } catch (err: any) {
+      console.warn('Wallet payment confirmation error', err);
+      const message = err?.response?.data?.message || err?.message || 'Payment failed';
+      if (message.toLowerCase().includes('insufficient')) {
+        Alert.alert('Insufficient funds', 'Your wallet balance is insufficient. Would you like to top up?', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Top up', onPress: () => {
+            setShowConfirmation(false);
+            router.push('/(tabs)/(profile)/wallet');
+          }}
+        ]);
+      } else {
+        showError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
   useFocusEffect(
     React.useCallback(() => {
       load();
     }, [])
   );
 
-  useEffect(() => {
-    // initialize Stripe (ensure you replace with your publishable key)
-    // You may prefer to initialize this in your app root using <StripeProvider>
-    if (!(global as any).__stripeInit) {
-      initStripe({
-        publishableKey:
-          "pk_test_51SWC8PKosm6nlnYmvcbkgsMCp3X1oSNc2WZ60oYTKH99plGcg8Jy9VsGHnoSVTLXHOaFnZkTNS7tjn8ZuMnhJx0s005ryiV8lp",
-      });
-      (global as any).__stripeInit = true;
-    }
-  }, []);
+  // useEffect(() => {
+  //   // initialize Stripe (ensure you replace with your publishable key)
+  //   // You may prefer to initialize this in your app root using <StripeProvider>
+  //   if (!(global as any).__stripeInit) {
+  //     initStripe({
+  //       publishableKey:
+  //         "pk_test_51SWC8PKosm6nlnYmvcbkgsMCp3X1oSNc2WZ60oYTKH99plGcg8Jy9VsGHnoSVTLXHOaFnZkTNS7tjn8ZuMnhJx0s005ryiV8lp",
+  //     });
+  //     (global as any).__stripeInit = true;
+  //   }
+  // }, []);
 
   useEffect(() => {
     const fetchWallet = async () => {
@@ -239,120 +284,120 @@ export default function PaymentScreen() {
     fetchWallet();
   }, [user]);
 
-  const initiateStripePayment = async () => {
-    if (!cardDetails || !cardDetails.complete) {
-      Alert.alert(
-        "Card Required",
-        "Please enter complete card details to pay with Stripe."
-      );
-      return;
-    }
-    setLoading(true);
+  // const initiateStripePayment = async () => {
+  //   if (!cardDetails || !cardDetails.complete) {
+  //     Alert.alert(
+  //       "Card Required",
+  //       "Please enter complete card details to pay with Stripe."
+  //     );
+  //     return;
+  //   }
+  //   setLoading(true);
     
   
-    try {
-      // Build order payload (same shape used by orderPlaced)
-      const data = {
-        items: cartItems,
-        dropoffAddress: addresses.length > 0 ? addresses[0].address : "",
-        dropoffLat: addresses.length > 0 ? addresses[0].latitude : null,
-        dropoffLng: addresses.length > 0 ? addresses[0].longitude : null,
-        paymentType: "STRIPE",
-        amountPaidByCustomer: total
-      };
+  //   try {
+  //     // Build order payload (same shape used by orderPlaced)
+  //     const data = {
+  //       items: cartItems,
+  //       dropoffAddress: addresses.length > 0 ? addresses[0].address : "",
+  //       dropoffLat: addresses.length > 0 ? addresses[0].latitude : null,
+  //       dropoffLng: addresses.length > 0 ? addresses[0].longitude : null,
+  //       paymentType: "STRIPE",
+  //       amountPaidByCustomer: total
+  //     };
 
-      // Ask backend to create a PaymentIntent and return client secret
-      // This endpoint must be implemented on your server: POST /payments/create-payment-intent
-      const token = user?.data?.token;
+  //     // Ask backend to create a PaymentIntent and return client secret
+  //     // This endpoint must be implemented on your server: POST /payments/create-payment-intent
+  //     const token = user?.data?.token;
 
-      // Convert app total (assumed NGN) into USD before asking backend
-      // for a Stripe PaymentIntent. By default we use a fallback exchange
-      // rate (1 USD = 500 NGN -> rate = 1/500 = 0.002). Replace this
-      // with a real rate (from your server or an FX API) in production.
-      const convertNgnToUsd = (amountNgn: number, rate?: number) => {
-        const fallbackRate = rate ?? 0.002; // default: 1 USD = 500 NGN
-        return amountNgn * fallbackRate;
-      };
+  //     // Convert app total (assumed NGN) into USD before asking backend
+  //     // for a Stripe PaymentIntent. By default we use a fallback exchange
+  //     // rate (1 USD = 500 NGN -> rate = 1/500 = 0.002). Replace this
+  //     // with a real rate (from your server or an FX API) in production.
+  //     const convertNgnToUsd = (amountNgn: number, rate?: number) => {
+  //       const fallbackRate = rate ?? 0.002; // default: 1 USD = 500 NGN
+  //       return amountNgn * fallbackRate;
+  //     };
 
-      const ngnAmount = total; // total is displayed in NGN in the app
-      const usdAmount = convertNgnToUsd(ngnAmount);
-      const amountInSmallestUnit = Math.round(usdAmount * 100); // amount in cents
-      setStripeDebug("requesting payment intent");
-      const resp = await createStripePaymentIntent(
-        {
-          amount: amountInSmallestUnit,
-          currency: "usd",
-          receipt_email: user?.data?.user?.email,
-        },
-        token
-      );
+  //     const ngnAmount = total; // total is displayed in NGN in the app
+  //     const usdAmount = convertNgnToUsd(ngnAmount);
+  //     const amountInSmallestUnit = Math.round(usdAmount * 100); // amount in cents
+  //     setStripeDebug("requesting payment intent");
+  //     const resp = await createStripePaymentIntent(
+  //       {
+  //         amount: amountInSmallestUnit,
+  //         currency: "usd",
+  //         receipt_email: user?.data?.user?.email,
+  //       },
+  //       token
+  //     );
 
-      const clientSecret =
-        resp?.data?.clientSecret || resp?.data?.client_secret;
-      if (!clientSecret) {
-        setStripeDebug(
-          "no client secret in response: " + JSON.stringify(resp?.data)
-        );
-      } else {
-        setStripeDebug("got client secret");
-      }
-      if (!clientSecret) {
-        throw new Error("Missing client secret from server.");
-      }
+  //     const clientSecret =
+  //       resp?.data?.clientSecret || resp?.data?.client_secret;
+  //     if (!clientSecret) {
+  //       setStripeDebug(
+  //         "no client secret in response: " + JSON.stringify(resp?.data)
+  //       );
+  //     } else {
+  //       setStripeDebug("got client secret");
+  //     }
+  //     if (!clientSecret) {
+  //       throw new Error("Missing client secret from server.");
+  //     }
 
-      // Confirm the payment with the card details collected via CardField
-      // Wrap confirmPayment with a timeout to avoid indefinite hanging
-      const confirmPromise = confirmPayment(clientSecret, {
-        paymentMethodType: "Card",
-        paymentMethodData: {
-          billingDetails: {
-            name: user?.data?.user?.name || "",
-            phone: user?.data?.user?.phone || "",
-            email: user?.data?.user?.email || undefined,
-          },
-        },
-      });
+  //     // Confirm the payment with the card details collected via CardField
+  //     // Wrap confirmPayment with a timeout to avoid indefinite hanging
+  //     const confirmPromise = confirmPayment(clientSecret, {
+  //       paymentMethodType: "Card",
+  //       paymentMethodData: {
+  //         billingDetails: {
+  //           name: user?.data?.user?.name || "",
+  //           phone: user?.data?.user?.phone || "",
+  //           email: user?.data?.user?.email || undefined,
+  //         },
+  //       },
+  //     });
 
-      const timeoutMs = 30000; // 30 seconds
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error("Stripe confirmPayment timed out")),
-          timeoutMs
-        )
-      );
-      const { error, paymentIntent } = (await Promise.race([
-        confirmPromise,
-        timeoutPromise,
-      ])) as any;
+  //     const timeoutMs = 30000; // 30 seconds
+  //     const timeoutPromise = new Promise((_, reject) =>
+  //       setTimeout(
+  //         () => reject(new Error("Stripe confirmPayment timed out")),
+  //         timeoutMs
+  //       )
+  //     );
+  //     const { error, paymentIntent } = (await Promise.race([
+  //       confirmPromise,
+  //       timeoutPromise,
+  //     ])) as any;
 
-      if (error) {
-        console.warn("Stripe confirmPayment error", error);
-        setStripeDebug(
-          "confirmPayment error: " + (error?.message || JSON.stringify(error))
-        );
-        showError(error.message || "Stripe payment failed");
-        return;
-      }
+  //     if (error) {
+  //       console.warn("Stripe confirmPayment error", error);
+  //       setStripeDebug(
+  //         "confirmPayment error: " + (error?.message || JSON.stringify(error))
+  //       );
+  //       showError(error.message || "Stripe payment failed");
+  //       return;
+  //     }
 
-      // Payment succeeded: call orderPlaced on backend using paymentIntent.id (or use client reference)
-      const reference =
-        (paymentIntent as any)?.id ||
-        (paymentIntent as any)?.client_secret ||
-        (paymentIntent as any)?.clientSecret ||
-        "";
-      console.log("payment reference", reference);
+  //     // Payment succeeded: call orderPlaced on backend using paymentIntent.id (or use client reference)
+  //     const reference =
+  //       (paymentIntent as any)?.id ||
+  //       (paymentIntent as any)?.client_secret ||
+  //       (paymentIntent as any)?.clientSecret ||
+  //       "";
+  //     console.log("payment reference", reference);
 
-      // Optionally send order to backend here, or rely on client to call orderPlaced as before
-      await orderPlaced(data, reference, token);
-      dispatch(clearCart());
-      router.replace('/(tabs)/(home)/congratulations');
-    } catch (e: any) {
-      console.warn("Stripe payment error", e);
-      showError(e?.message || "Stripe payment failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     // Optionally send order to backend here, or rely on client to call orderPlaced as before
+  //     await orderPlaced(data, reference, token);
+  //     dispatch(clearCart());
+  //     router.replace('/(tabs)/(home)/congratulations');
+  //   } catch (e: any) {
+  //     console.warn("Stripe payment error", e);
+  //     showError(e?.message || "Stripe payment failed.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <KeyboardAvoidingView
@@ -593,6 +638,56 @@ export default function PaymentScreen() {
             // ref={paystackWebViewRef}
           />
         )}
+
+        {/* Order Confirmation Modal with Delivery Fees */}
+        {showConfirmation && orderSummary && (
+          <View style={styles.overlay}>
+            <View style={styles.modalBox}>
+              <Text className="text-2xl font-RalewaySemiBold mb-4">
+                Order Summary
+              </Text>
+              
+              <View className="mb-4 pb-4 border-b border-gray-200">
+                <View className="flex-row justify-between mb-3">
+                  <Text className="text-gray-600 font-NunitoMedium">Items Total</Text>
+                  <Text className="text-gray-900 font-RalewaySemiBold">₦{(orderSummary.itemsTotal || 0).toLocaleString()}</Text>
+                </View>
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-600 font-NunitoMedium">Delivery Fee</Text>
+                  <Text className="text-orange-600 font-RalewaySemiBold">₦{(orderSummary.deliveryFee || 0).toLocaleString()}</Text>
+                </View>
+              </View>
+
+              <View className="flex-row justify-between mb-6">
+                <Text className="text-lg font-RalewaySemiBold">Total Amount</Text>
+                <Text className="text-2xl font-RalewaySemiBold text-primary-100">₦{(orderSummary.total || 0).toLocaleString()}</Text>
+              </View>
+
+              <View className="flex-row gap-3">
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowConfirmation(false);
+                    setOrderSummary(null);
+                  }}
+                  className="flex-1 bg-gray-200 rounded-lg p-3 items-center"
+                  disabled={loading}
+                >
+                  <Text className="text-gray-800 font-NunitoBold">Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={confirmWalletPayment}
+                  className="flex-1 bg-primary-100 rounded-lg p-3 items-center"
+                  disabled={loading}
+                >
+                  <Text className="text-white font-NunitoBold">
+                    {loading ? "Processing..." : "Confirm Payment"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
         {loading && (
           <View style={styles.overlay}>
             <View style={styles.loaderBox}>
@@ -623,12 +718,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(255,255,255,0.95)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     height: "100%",
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 9999,
+  },
+  modalBox: {
+    alignItems: "flex-start",
+    padding: 20,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    width: "85%",
   },
   loaderBox: {
     alignItems: "center",

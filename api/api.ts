@@ -123,6 +123,17 @@ export const orderPlaced = async(data:any,reference:string, token:string) => {
     throw error.response?.data || error;
   });
 }
+// Get order preview with calculated delivery fees and final total
+export const getOrderPreview = async(data:any, token:string) => {
+  return api.post(`/vendor/delivery/preview`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
 export const placeWalletOrder = async(data:any, token:string) => {
   return api.post(`/vendor/create-delivery`, data, {
     headers: {
@@ -242,6 +253,42 @@ export const getRiderStatus = async(token:string) => {
     headers: {
       Authorization: `Bearer ${token}`
     }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+// Rider wallet endpoints
+export const getRiderWalletBalance = async(token?: string) => {
+  return api.get(`/payments/rider/wallet/balance`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const getRiderWalletHistory = async(token?: string, params?: { limit?: number; skip?: number }) => {
+  return api.get(`/payments/rider/wallet/history`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    params,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+export const getRiderWalletTransactionDetail = async(token?: string, transactionId?: string) => {
+  return api.get(`/payments/rider/wallet/history/${transactionId}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
+// Held escrow transactions that are waiting release to rider (used by earnings UI)
+export const getRiderHeldEscrowTransactions = async(token?: string, params?: { limit?: number; skip?: number }) => {
+  return api.get(`/rider/held-escrow-transactions`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    params,
   }).catch((error) => {
     throw error.response?.data || error;
   });

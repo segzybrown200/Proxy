@@ -209,12 +209,12 @@ const RiderDashboard = () => {
       color: "#0056FF",
       route: "active-orders",
     },
-    // {
-    //   title: "Earnings",
-    //   icon: "cash-multiple" as const,
-    //   color: "#22C55E",
-    //   route: "earnings",
-    // },
+    {
+      title: "Earnings",
+      icon: "cash-multiple" as const,
+      color: "#22C55E",
+      route: "earnings",
+    },
     {
       title: "History",
       icon: "history" as const,

@@ -1,5 +1,5 @@
-import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getNewListings, getOrders, getPopularListings, getRiderHistory, getRiderStatus, getSingleDeliveryOrder, getWalletBalance } from "api/api"
-import { getWalletTransactions, getTransactionHistory } from "api/api"
+import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getNewListings, getOrders, getPopularListings, getRiderHeldEscrowTransactions, getRiderHistory, getRiderStatus, getSingleDeliveryOrder, getWalletBalance } from "api/api"
+import { getWalletTransactions, getTransactionHistory, getRiderWalletBalance, getRiderWalletHistory } from "api/api"
 import axios from "axios";
 import useSWR  from "swr"
 import { SWRConfiguration } from "swr"
@@ -294,7 +294,6 @@ export const useSingleOrder = (token:string, id:string)=>{
 
 export const useWalletBalance = (token?: string) => {
   const fetcher = (token?: string) => getWalletBalance(token);
-  console.log(token)
 
 
   const { data, error, isLoading, mutate }: any = useSWR(
@@ -319,6 +318,87 @@ export const useWalletBalance = (token?: string) => {
     isLoading,
     isError: !!error,
     mutate,
+  };
+};
+
+export const useRiderWallet = (token?: string) => {
+  const fetcher = (token?: string) => getRiderWalletBalance(token);
+
+  const { data, error, isLoading, mutate }: any = useSWR(
+    token ? `/rider/wallet/balance` : null,
+    () => fetcher(token),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true,
+    }
+  );
+
+  const wallet = data?.data?.data || data;
+
+
+  return {
+    balance: Number(wallet?.balance) || 0,
+    totalEarned: Number(wallet?.totalEarned) || 0,
+    currency: wallet?.currency || '₦',
+    updatedAt: wallet?.updatedAt,
+    walletId: wallet?.walletId,
+    isLoading,
+    isError: !!error,
+    mutate,
+  };
+};
+
+export const useRiderWalletHistory = (token?: string, params?: { limit?: number; skip?: number }) => {
+  const fetcher = (token?: string, params?: any) => getRiderWalletHistory(token, params);
+
+  const key = token ? `/rider/wallet/history?limit=${params?.limit || 20}&skip=${params?.skip || 0}` : null;
+
+  const { data, error, isLoading, mutate }: any = useSWR(
+    key,
+    () => fetcher(token, params),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true,
+    }
+  );
+
+
+  const txs = data?.data?.data?.transactions || data?.transactions || data?.data || [];
+
+  return {
+    transactions: Array.isArray(txs) ? txs : [],
+    isLoading,
+    isError: !!error,
+    mutate,
+    refetch: () => mutate(),
+  };
+};
+
+// hook for retrieving held-escrow transactions (funds that are still being held until release)
+export const useRiderHeldEscrow = (token?: string, params?: { limit?: number; skip?: number }) => {
+  const fetcher = (token?: string, params?: any) => getRiderHeldEscrowTransactions(token, params);
+
+  const key = token ? `/rider/wallet/held-escrow?limit=${params?.limit || 20}&skip=${params?.skip || 0}` : null;
+
+  const { data, error, isLoading, mutate }: any = useSWR(
+    key,
+    () => fetcher(token, params),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true,
+    }
+  );
+  const txs = data?.data?.data?.transactions || data?.transactions || data?.data || [];
+
+  return {
+    transactions: Array.isArray(txs) ? txs : [],
+    isLoading,
+    isError: !!error,
+    mutate,
+    refetch: () => mutate(),
   };
 };
 
