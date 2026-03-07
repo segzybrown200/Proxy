@@ -69,7 +69,7 @@ const Listings = () => {
                   return String(item?.subCategoryId || item?.subCategory?.id || '') === String(activeSubCategoryId);
                 })
                 .map((item:any)=>(
-                     <TouchableOpacity key={item?.id} onPress={()=>router.push({pathname: "/(tabs)/(home)/details", params:{item: JSON.stringify(item)}})} className="mt-5 w-[49%] border border-primary-100 rounded-lg">
+                    <TouchableOpacity key={item?.id} onPress={()=>router.push({pathname: "/(tabs)/(home)/details", params:{item: JSON.stringify(item)}})} className="mt-5 w-[49%] border border-primary-100 rounded-lg" style={{ position: 'relative' }}>
               <View className="w-full h-40 rounded-lg border-4 border-white shadow-2xl overflow-hidden">
                 <Image
                   source={{uri: item?.media?.find((media: any) => media.mimeType === 'image/jpeg')?.url || item?.media[0]?.url}}

@@ -24,6 +24,7 @@ import {
 } from "hooks/useHooks";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { AntDesign, Feather } from "@expo/vector-icons";
+import { LinearGradient } from 'expo-linear-gradient';
 import { mutate } from "swr";
 import axios from "axios";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -49,6 +50,11 @@ const index = () => {
 
   const NewList = NewListing?.data || [];
 
+  const [jobsListings, setJobsListings] = useState<any[]>([]);
+  const [servicesListings, setServicesListings] = useState<any[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [servicesLoading, setServicesLoading] = useState(false);
+
   // Prefetch helper: fetch first page for a category and store in SWR cache
   const buildCategoryUrl = (categoryId: string, cursor = "") =>
     `https://proxy-backend-6of2.onrender.com/api/listings/search-category?limit=10&categoryId=${categoryId}${cursor ? `&cursor=${cursor}` : ""}`;
@@ -63,6 +69,45 @@ const index = () => {
       console.warn("prefetchCategory failed", err);
     }
   };
+
+  // Fetch Jobs and Services listings when categories load
+  useEffect(() => {
+    const fetchCategoryListings = async () => {
+      if (!categories?.categories) return;
+      const findCategory = (name: string) =>
+        categories.categories.find(
+          (c: any) => (c.name || c.title || "").toString().toLowerCase() === name
+        );
+
+      const jobsCat = findCategory("jobs");
+      const servicesCat = findCategory("services");
+
+      if (jobsCat) {
+        setJobsLoading(true);
+        try {
+          const res = await axios.get(buildCategoryUrl(String(jobsCat.id)));
+          setJobsListings(res.data?.data || []);
+        } catch (e) {
+          console.warn("Failed to fetch jobs listings", e);
+        } finally {
+          setJobsLoading(false);
+        }
+      }
+
+      if (servicesCat) {
+        setServicesLoading(true);
+        try {
+          const res = await axios.get(buildCategoryUrl(String(servicesCat.id)));
+          setServicesListings(res.data?.data || []);
+        } catch (e) {
+          console.warn("Failed to fetch services listings", e);
+        } finally {
+          setServicesLoading(false);
+        }
+      }
+    };
+    fetchCategoryListings();
+  }, [categories]);
 
   // small helper: promise timeout wrapper
   async function withTimeout<T>(promise: Promise<T>, ms = 12000): Promise<T> {
@@ -239,7 +284,7 @@ const index = () => {
 
   return (
     <SafeAreaView className="flex-1 flex px-5 bg-white">
-      <View className="flex-row items-center mt-8 justify-between">
+      <View className="flex-row items-center mt-8 justify-between" style={{ zIndex: 50, elevation: 50 }}>
         <View className="w-[75%]">
           <View className="flex-row items-center">
             <Text className="text-2xl  font-RalewayBold text-textColor-100">
@@ -326,10 +371,10 @@ const index = () => {
         <View className="mt-8 flex-row flex-wrap justify-between">
           {isLoading ? (
             // Loading skeleton
-            [...Array(4)].map((_, index) => (
+            [...Array(6)].map((_, index) => (
               <View
                 key={`skeleton-${index}`}
-                className="w-[32%] h-[50px] bg-gray-100 rounded-lg mb-3 animate-pulse"
+                className="w-[32%] h-[140px] bg-gray-100 rounded-2xl mb-4 animate-pulse"
               />
             ))
           ) : isError ? (
@@ -347,71 +392,111 @@ const index = () => {
             </View>
           ) : categories?.categories?.length > 0 ? (
             // Show only first 6 categories in home view
-            categories?.categories.slice(0, 6).map((item: any) => (
-              <TouchableOpacity
-                onPressIn={() => prefetchCategory(String(item.id))}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(tabs)/(home)/category",
-                    params: {
-                      id: item.id,
-                      category: item.name,
-                      allCategories: JSON.stringify(
-                        categories?.categories || []
-                      ),
-                    },
-                  })
-                }
-                key={item.id}
-                className="w-[32%] bg-primary-100/10 p-2 rounded-lg mb-3"
-              >
-                <View className="flex-row items-center">
+            categories?.categories.slice(0, 6).map((item: any, index: number) => {
+              const gradients = [
+                { colors: ['#60A5FA', '#2563EB'], icon: '#ffffff' },
+                { colors: ['#3B82F6', '#1D4ED8'], icon: '#ffffff' },
+                { colors: ['#1E40AF', '#1E3A8A'], icon: '#ffffff' },
+                { colors: ['#60A5FA', '#3B82F6'], icon: '#ffffff' },
+                { colors: ['#93C5FD', '#60A5FA'], icon: '#ffffff' },
+                { colors: ['#2563EB', '#1E40AF'], icon: '#ffffff' },
+              ];
+              const gradient = gradients[index % gradients.length];
+              
+              return (
+                <TouchableOpacity
+                  onPressIn={() => prefetchCategory(String(item.id))}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/(home)/category",
+                      params: {
+                        id: item.id,
+                        category: item.name,
+                        allCategories: JSON.stringify(
+                          categories?.categories || []
+                        ),
+                      },
+                    })
+                  }
+                  key={item.id}
+                  activeOpacity={0.85}
+                  className={`w-[32%] p-0 mb-4`}
+                  style={{
+                    elevation: 10,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.18,
+                    shadowRadius: 10,
+                    borderRadius: 16,
+                    overflow: 'hidden',
+                  }}
+                >
                   {item?.imageUrl ? (
-                    <Image
-                      source={{ uri: item?.imageUrl }}
-                      style={{ width: 32, height: 32, borderRadius: 999 }}
-                      contentFit="cover"
-                    />
-                  ) : item.iconLib === "Ionicons" ? (
-                    <View
-                      className={`w-8 h-8 rounded-full items-center justify-center `}
-                    >
-                      <Ionicons
-                        name={item.iconName}
-                        size={18}
-                        color={"#004CFF"}
+                    <View style={{ height: 140, borderRadius: 16, overflow: 'hidden' }}>
+                      <Image
+                        source={{ uri: item.imageUrl }}
+                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }}
+                        contentFit="cover"
+                        onError={(error) => console.log('Category image load error:', error)}
                       />
+                      <LinearGradient
+                        colors={gradient.colors.map(color => color + '80') as any}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          flex: 1,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 16,
+                        }}
+                      >
+                        <View className="items-center justify-center w-full">
+                          <Text
+                            numberOfLines={2}
+                            className="text-sm font-NunitoExtraBold text-white text-center"
+                          >
+                            {item.name}
+                          </Text>
+                        </View>
+                      </LinearGradient>
                     </View>
-                  ) : item.iconLib === "AntDesign" ? (
-                    <View
-                      className={`w-8 h-8 rounded-full items-center justify-center `}
+                  ) : (
+                    <LinearGradient
+                      colors={gradient.colors as any}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{
+                        height: 140,
+                        padding: 16,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
                     >
-                      <AntDesign
-                        name={item.iconName}
-                        size={18}
-                        color={"#004CFF"}
-                      />
-                    </View>
-                  ) : item.iconLib === "Feather" ? (
-                    <View
-                      className={`w-8 h-8 rounded-full items-center justify-center `}
-                    >
-                      <Feather
-                        name={item.iconName}
-                        size={18}
-                        color={"#004CFF"}
-                      />
-                    </View>
-                  ) : null}
-                  <Text
-                    numberOfLines={2}
-                    className="text-sm font-NunitoMedium text-primary-100 ml-1 flex-1"
-                  >
-                    {item.name}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))
+                      <View className="items-center justify-center w-full">
+                        <View className="mb-2 w-[70px] h-[70px] rounded-full justify-center items-center bg-white/20">
+                          {item.iconLib === "Ionicons" ? (
+                            <Ionicons name={item.iconName} size={36} color={gradient.icon} />
+                          ) : item.iconLib === "AntDesign" ? (
+                            <AntDesign name={item.iconName} size={36} color={gradient.icon} />
+                          ) : item.iconLib === "Feather" ? (
+                            <Feather name={item.iconName} size={36} color={gradient.icon} />
+                          ) : (
+                            <Text className="text-white font-NunitoBold text-lg">{(item.name || "").charAt(0)}</Text>
+                          )}
+                        </View>
+                        <Text
+                          numberOfLines={2}
+                          className="text-sm font-NunitoExtraBold text-white text-center mt-1"
+                        >
+                          {item.name}
+                        </Text>
+                      </View>
+                    </LinearGradient>
+                  )}
+                </TouchableOpacity>
+              );
+            })
           ) : (
             // No categories found
             <Text className="text-gray-500 font-NunitoMedium w-full text-center py-4">
@@ -460,9 +545,10 @@ const index = () => {
                     params: { item: JSON.stringify(item) },
                   })
                 }
-                className="mt-5 w-[49%] border border-primary-100 rounded-lg"
+                className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden"
+                style={{ height: 240, position: 'relative' }}
               >
-                <View className="w-full h-40 rounded-lg border-4 border-white shadow-2xl overflow-hidden">
+                <View style={{ flex: 1, position: 'relative' }}>
                   <Image
                     source={{
                       uri:
@@ -470,7 +556,7 @@ const index = () => {
                           (media: any) => media.mimeType === "image/jpeg"
                         )?.url || item?.media[0]?.url,
                     }}
-                    style={{ width: '100%', height: '100%' }}
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                     contentFit="cover"
                     onLoad={() => item?.id}
                     onError={(error) =>
@@ -480,40 +566,102 @@ const index = () => {
                       )
                     }
                   />
+                  <LinearGradient
+                    colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)'] as any}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      padding: 10,
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <View className="flex-row mt-10 justify-between items-start">
+                      <Text
+                        numberOfLines={2}
+                        className="text-lg font-NunitoExtraBold text-white w-[70%]"
+                      >
+                        {item?.title}
+                      </Text>
+                      <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center">
+                        <FontAwesome6 name="plus" size={18} color="white" />
+                      </TouchableOpacity>
+                    </View>
+                    <View>
+                      <Text className="text-[22px] font-RalewayExtraBold text-white">
+                        {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
+                      </Text>
+                      <Text className="bg-primary-100 text-lg rounded-lg text-white p-2 font-NunitoSemiBold flex flex-row justify-center items-center mt-2">
+                        {item?.condition.toUpperCase()}
+                      </Text>
+                      <Text className="font-NunitoMedium text-lg text-white">
+                        {item?.seller?.vendorApplication?.location?.city}, {item?.seller?.vendorApplication?.location?.country}
+                      </Text>
+                    </View>
+                  </LinearGradient>
                 </View>
-                <View>
-                  <View className="p-1 flex-row justify-between items-start">
-                    <Text
-                      numberOfLines={2}
-                      className="text-lg font-NunitoRegular text-textColor-100 mt-2 w-[70%]"
-                    >
-                      {item?.title}
-                    </Text>
-                    <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center mt-1">
-                      <FontAwesome6 name="plus" size={18} color="white" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text className="text-[22px] p-1 font-RalewayExtraBold text-textColor-100 ">
-                    {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
-                  </Text>
-
-                  <View className="relative p-2 mt-2 mb-5">
-                    <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center">
-                      {item?.condition.toUpperCase()}
-                    </Text>
-                    <Text className="font-NunitoMedium text-lg">
-                      {item?.seller?.vendorApplication?.location?.city},
-                      {item?.seller?.vendorApplication?.location?.country}
-                    </Text>
-                  </View>
-                </View>
-                <View className="bg-primary-100 p-2 rounded-b-lg absolute top-4 right-2">
+                <View className="bg-primary-100 p-2 rounded-b-lg absolute top-2 right-2" style={{ zIndex: 0, elevation: 0 }}>
                   <Text className="text-white font-NunitoLight">
                     Verified ID
                   </Text>
                 </View>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        {/* Jobs & Services (combined) */}
+        <View>
+          <View className="mt-8 flex-row justify-between items-center">
+            <Text className="text-xl font-NunitoMedium text-textColor-100">Jobs & Services</Text>
+            {categories?.categories && (
+              <TouchableOpacity
+                onPress={() => {
+                  const jobsCat = categories.categories.find((c:any) => (c.name||c.title||"").toLowerCase() === 'jobs');
+                  if (jobsCat) {
+                    router.push({ pathname: '/(tabs)/(home)/category', params: { category: jobsCat.name || jobsCat.title, id: String(jobsCat.id), allCategories: JSON.stringify(categories?.categories || []) } });
+                  } else {
+                    const servicesCat = categories.categories.find((c:any) => (c.name||c.title||"").toLowerCase() === 'services');
+                    if (servicesCat) router.push({ pathname: '/(tabs)/(home)/category', params: { category: servicesCat.name || servicesCat.title, id: String(servicesCat.id), allCategories: JSON.stringify(categories?.categories || []) } });
+                  }
+                }}
+                className="flex-row items-center gap-1"
+              >
+                <Text className="text-lg font-NunitoBold text-primary-100">View All</Text>
+                <MaterialIcons name="arrow-forward-ios" size={18} color="#004CFF" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <View className="flex flex-row flex-wrap justify-between gap-1">
+            {(() => {
+              const combined = [...(jobsListings || []), ...(servicesListings || [])];
+              const map = new Map<string, any>();
+              combined.forEach((it: any) => { if (it?.id) map.set(it.id, it); });
+              const uniq = Array.from(map.values()).slice(0,4);
+              return uniq.map((item:any) => (
+                <TouchableOpacity key={item?.id} onPress={() => router.push({ pathname: '/(tabs)/(home)/details', params: { item: JSON.stringify(item) } })} className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden" style={{ height: 240, position:'relative' }}>
+                  <View style={{ flex: 1, position: 'relative' }}>
+                    <Image source={{ uri: item?.media?.[0]?.url }} style={{ position: 'absolute', top:0, left:0, right:0, bottom:0 }} contentFit="cover" onError={(e)=>console.log('Jobs&Services image error', e)} />
+                    <LinearGradient colors={['rgba(0,0,0,0.5)','rgba(0,0,0,0.2)'] as any} start={{x:0,y:0}} end={{x:1,y:1}} style={{ position:'absolute', top:0,left:0,right:0,bottom:0,padding:10, justifyContent:'space-between' }}>
+                      <View className="flex-row justify-between items-start">
+                        <Text numberOfLines={2} className="text-lg font-NunitoRegular text-white w-[70%]">{item?.title}</Text>
+                        <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center"><FontAwesome6 name="plus" size={18} color="white" /></TouchableOpacity>
+                      </View>
+                      <View>
+                        <Text className="text-[22px] font-RalewayExtraBold text-white">{formatCurrency(item?.price,'NGN','Nigerian Naira')}</Text>
+                        <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center mt-2">{item?.condition?.toUpperCase()}</Text>
+                        <Text className="font-NunitoMedium text-lg text-white">{item?.seller?.vendorApplication?.location?.city}, {item?.seller?.vendorApplication?.location?.country}</Text>
+                      </View>
+                    </LinearGradient>
+                  </View>
+                  <View className="bg-primary-100 p-2 rounded-b-lg absolute bottom-2 right-2" style={{ zIndex: 0, elevation: 0 }}><Text className="text-white font-NunitoLight">Verified ID</Text></View>
+                </TouchableOpacity>
+              ));
+            })()}
           </View>
         </View>
 
@@ -553,7 +701,8 @@ const index = () => {
                     params: { item: JSON.stringify(item) },
                   })
                 }
-                className="mt-5 w-[49%] border border-primary-100 rounded-lg"
+                className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden"
+                style={{ height: 240, position: 'relative' }}
               >
                 {(() => {
                   const jpegImage = item?.media?.find(
@@ -561,10 +710,10 @@ const index = () => {
                   );
                   const imageUrl = jpegImage?.url || item?.media[0]?.url;
                   return (
-                    <View className="w-full h-40 rounded-lg border-4 border-white shadow-2xl overflow-hidden">
+                    <View style={{ flex: 1, position: 'relative' }}>
                       <Image
                         source={{ uri: imageUrl }}
-                        style={{ width: '100%', height: '100%' }}
+                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                         contentFit="cover"
                         onLoad={() => item?.id}
                         onError={(error) =>
@@ -574,36 +723,47 @@ const index = () => {
                           )
                         }
                       />
+                      <LinearGradient
+                        colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)'] as any}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          padding: 10,
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <View className="flex-row justify-between items-start">
+                          <Text
+                            numberOfLines={2}
+                            className="text-lg font-NunitoRegular text-white w-[70%]"
+                          >
+                            {item?.title}
+                          </Text>
+                          <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center">
+                            <FontAwesome6 name="plus" size={18} color="white" />
+                          </TouchableOpacity>
+                        </View>
+                        <View>
+                          <Text className="text-[22px] font-RalewayExtraBold text-white">
+                            {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
+                          </Text>
+                          <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center mt-2">
+                            {item?.condition.toUpperCase()}
+                          </Text>
+                          <Text className="font-NunitoMedium text-lg text-white">
+                            {item?.seller?.vendorApplication?.location?.city}, {item?.seller?.vendorApplication?.location?.country}
+                          </Text>
+                        </View>
+                      </LinearGradient>
                     </View>
                   );
                 })()}
-                <View>
-                  <View className="p-1 flex-row justify-between items-start">
-                    <Text
-                      numberOfLines={2}
-                      className="text-lg font-NunitoRegular text-textColor-100 mt-2 w-[70%]"
-                    >
-                      {item?.title}
-                    </Text>
-                    <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center mt-1">
-                      <FontAwesome6 name="plus" size={18} color="white" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text className="text-[22px] p-1 font-RalewayExtraBold text-textColor-100 ">
-                    {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
-                  </Text>
-
-                  <View className="relative p-2 mt-2 mb-5">
-                    <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center">
-                      {item?.condition.toUpperCase()}
-                    </Text>
-                    <Text className="font-NunitoMedium text-lg">
-                      {item?.seller?.vendorApplication?.location?.city},
-                      {item?.seller?.vendorApplication?.location?.country}
-                    </Text>
-                  </View>
-                </View>
-                <View className="bg-primary-100 p-2 rounded-b-lg absolute top-4 right-2">
+                <View className="bg-primary-100 p-2 rounded-b-lg absolute bottom-2 right-2" style={{ zIndex: 0, elevation: 0 }}>
                   <Text className="text-white font-NunitoLight">
                     Verified ID
                   </Text>
