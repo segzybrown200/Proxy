@@ -15,6 +15,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo } from "react";
 import { AntDesign, Feather, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useCategoryListings } from "hooks/useHooks";
 
 
@@ -222,6 +223,27 @@ const category = () => {
           white="yes"
         />
       </View>
+
+      {/* Seller Opportunity Banner */}
+      <LinearGradient
+        colors={["#667EEA", "#764BA2"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ borderRadius: 12, marginBottom: 16, marginTop: 12, overflow: 'hidden' }}
+      >
+        <TouchableOpacity 
+          onPress={() => router.push("/(tabs)/(home)/seller-onboarding")}
+          className="p-4 flex-row items-center justify-between"
+        >
+          <View className="flex-1">
+            <Text className="text-white font-RalewayBold text-lg mb-1">Sell Similar Items?</Text>
+            <Text className="text-white/80 font-NunitoRegular text-sm">Browse items you love and start selling</Text>
+          </View>
+          <View className="bg-white/20 rounded-full p-3">
+            <MaterialCommunityIcons name="arrow-right" size={20} color="white" />
+          </View>
+        </TouchableOpacity>
+      </LinearGradient>
 
       {category !== "Category" && (
         <View>

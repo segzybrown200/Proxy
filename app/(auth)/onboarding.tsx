@@ -36,6 +36,12 @@ const slides = [
     highlight: "Shopping",
     subtitle: "Browse, buy, and get your items delivered or picked up quickly.",
   },
+  {
+    key: "s4",
+    title: "Also Start",
+    highlight: "Selling",
+    subtitle: "Turn your items into cash. List products and earn from thousands of buyers.",
+  },
 ];
 
 const backgroundVideo = "https://res.cloudinary.com/doemqvrzy/video/upload/v1771377240/Proxy_Video_2_loxnuo.mp4";
@@ -58,6 +64,7 @@ const Onboarding = () => {
 
     // Listen to status changes
     const subscription = player.addListener('statusChange', (status) => {
+      player.play()
       if (status.status === 'readyToPlay') {
         setIsVideoReady(true);
         // Start playing after it's loaded

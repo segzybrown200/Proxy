@@ -1,4 +1,4 @@
-import * as Location from "expo-location";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -8,8 +8,8 @@ import {
   Alert,
   Linking,
 } from "react-native";
+import * as Location from "expo-location";
 import { Image } from 'expo-image';
-import React, { useEffect, useState } from "react";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { SearchComponent } from "components/SearchInput";
@@ -17,6 +17,9 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScrollView } from "react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSelector } from "react-redux";
+import { selectUser } from "global/authSlice";
+import { SellerAdModal } from "components/SellerAdModal";
 import {
   useCategory,
   useNewListings,
@@ -35,6 +38,17 @@ const index = () => {
   const [loadingAddress, setLoadingAddress] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [refreshing, setRefreshing] = useState(false);
+  const [showSellerAd, setShowSellerAd] = useState(false);
+
+  const user: any = useSelector(selectUser);
+  const roles = useMemo(() => {
+    const maybeRoles = user?.data?.user?.roles ?? user?.data?.user?.role ?? [];
+    if (Array.isArray(maybeRoles)) return maybeRoles.map((r: any) => String(r).toUpperCase());
+    if (typeof maybeRoles === "string") return [maybeRoles.toUpperCase()];
+    return [];
+  }, [user]);
+  const isSeller = roles.includes("SELLER");
+
 
   const { categories, isError, isLoading } = useCategory();
   const {
@@ -54,6 +68,8 @@ const index = () => {
   const [servicesListings, setServicesListings] = useState<any[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [servicesLoading, setServicesLoading] = useState(false);
+
+  
 
   // Prefetch helper: fetch first page for a category and store in SWR cache
   const buildCategoryUrl = (categoryId: string, cursor = "") =>
@@ -247,6 +263,45 @@ const index = () => {
     loadLocation();
   }, []);
 
+  // Check and show seller ad modal periodically
+  useEffect(() => {
+    const checkShowSellerAd = async () => {
+      try {
+        const lastShownTime = await AsyncStorage.getItem("sellerAdLastShown");
+        const now = Date.now();
+        const TWO_HOURS = 0.5 * 60 * 60 * 1000;
+
+        if (!lastShownTime) {
+          // First time - show after a delay
+          setTimeout(() => setShowSellerAd(true), 3000);
+          await AsyncStorage.setItem("sellerAdLastShown", now.toString());
+        } else {
+          const timeSinceLastShown = now - parseInt(lastShownTime);
+          // Show again after 2 hours
+          if (timeSinceLastShown > TWO_HOURS) {
+            setTimeout(() => setShowSellerAd(true), 3000);
+            await AsyncStorage.setItem("sellerAdLastShown", now.toString());
+          }
+        }
+      } catch (e) {
+        console.warn("Error checking seller ad:", e);
+      }
+    };
+
+    if (!isSeller) {
+      checkShowSellerAd();
+    }
+  }, [isSeller]);
+
+  const handleCloseSellerAd = () => {
+    setShowSellerAd(false);
+  };
+
+  const handleStartSellingFromAd = () => {
+    setShowSellerAd(false);
+    router.push("/(tabs)/(home)/seller-onboarding");
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -284,6 +339,12 @@ const index = () => {
 
   return (
     <SafeAreaView className="flex-1 flex px-5 bg-white">
+      <SellerAdModal
+        visible={showSellerAd}
+        onClose={handleCloseSellerAd}
+        onStartSelling={handleStartSellingFromAd}
+        isSeller={isSeller}
+      />
       <View className="flex-row items-center mt-8 justify-between" style={{ zIndex: 50, elevation: 50 }}>
         <View className="w-[75%]">
           <View className="flex-row items-center">

@@ -45,11 +45,30 @@ const authState = createSlice({
                     }
                 };
             }
+        },
+        addSellerRole: (state) => {
+            if (state.user) {
+                const currentRoles = (state.user as any).data?.user?.roles || (state.user as any).data?.user?.role || [];
+                const roleArray = Array.isArray(currentRoles) ? currentRoles : [currentRoles];
+                const normalized = new Set(roleArray.map((r: any) => String(r).toUpperCase()));
+                normalized.add("SELLER");
+
+                state.user = {
+                    ...state.user,
+                    data: {
+                        ...(state.user as any).data,
+                        user: {
+                            ...(state.user as any).data.user,
+                            roles: Array.from(normalized),
+                        },
+                    },
+                };
+            }
         }
     },
 });
 
-export const { loginState, logoutState, VisitorState, pendingUserState, pendingUserLogout, updateUserState } = authState.actions;
+export const { loginState, logoutState, VisitorState, pendingUserState, pendingUserLogout, updateUserState, addSellerRole } = authState.actions;
 export const selectUser = (state: RootState) => state.auth.user;
 export const selectIsVisitor = (state: RootState) => state.auth.isVisitor;
 export const selectPendingUser = (state: RootState) => state.auth.pendingUser;

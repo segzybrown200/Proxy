@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import { router } from "expo-router";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { SellerPromoCard } from "components/SellerPromoCard";
+import { openSellerAppWithFallback } from "utils/sellerDeepLink";
 import {
   logoutState,
   selectIsVisitor,
@@ -31,6 +33,15 @@ export default function ProfileScreen() {
   const [riderStatus, setRiderStatus] = useState<any>(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const roles = useMemo(() => {
+    const maybeRoles = user?.data?.user?.roles ?? user?.data?.user?.role ?? [];
+    if (Array.isArray(maybeRoles)) return maybeRoles.map((r: any) => String(r).toUpperCase());
+    if (typeof maybeRoles === "string") return [maybeRoles.toUpperCase()];
+    return [];
+  }, [user]);
+
+  const isSeller = roles.includes("SELLER");
 
   const menuItems = [
     {
@@ -149,6 +160,23 @@ export default function ProfileScreen() {
 
         {select ? null : (
           <>
+            {/* Seller Promo Card - Show to all users, but especially non-sellers */}
+            <SellerPromoCard
+              isSeller={isSeller}
+              title={isSeller ? "Seller Dashboard" : "Become a Seller"}
+              description={
+                isSeller
+                  ? "Manage your store, orders, and earnings from the Seller App."
+                  : "Grow your business and reach thousands of buyers."
+              }
+              buttonText={isSeller ? "Open Seller App" : "Learn More"}
+              onPress={() =>
+                isSeller
+                  ? openSellerAppWithFallback()
+                  : router.push("/(tabs)/(home)/seller-onboarding")
+              }
+            />
+
             {/* Profile Info Section */}
             <View className="bg-[#F8F9FA] rounded-2xl p-3 mb-5">
               {menuItems.map((item, index) => (
@@ -205,6 +233,25 @@ export default function ProfileScreen() {
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#999" />
               </TouchableOpacity>
+
+              {isSeller && (
+                <TouchableOpacity
+                  className="flex-row items-center justify-between py-4"
+                  onPress={openSellerAppWithFallback}
+                >
+                  <View className="flex-row items-center space-x-6 gap-3">
+                    <MaterialCommunityIcons
+                      name="store"
+                      size={24}
+                      color="#F59E0B"
+                    />
+                    <Text className="font-NunitoRegular text-lg text-gray-700">
+                      Switch to Seller
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color="#999" />
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Account Section */}
@@ -293,6 +340,7 @@ export default function ProfileScreen() {
             if (!select) {
               AsyncStorage.removeItem("sessionId");
               AsyncStorage.removeItem("userLocation");
+              AsyncStorage.removeItem("sellerAdLastShown");
               dispatch(clearCart());
               dispatch(logoutState());
               router.replace("/(auth)/login");

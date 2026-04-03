@@ -14,6 +14,7 @@ const _layout = () => {
         <Stack.Screen name="payment" options={{ headerShown: false }} />
         <Stack.Screen name="congratulations" options={{ headerShown: false }} />
         <Stack.Screen name="search-results" options={{ headerShown: false }} />
+        <Stack.Screen name="seller-onboarding" options={{ headerShown: false }} />
       
     </Stack>
     </SafeAreaProvider>
