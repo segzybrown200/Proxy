@@ -73,7 +73,7 @@ const index = () => {
 
   // Prefetch helper: fetch first page for a category and store in SWR cache
   const buildCategoryUrl = (categoryId: string, cursor = "") =>
-    `https://proxy-backend-6of2.onrender.com/api/listings/search-category?limit=10&categoryId=${categoryId}${cursor ? `&cursor=${cursor}` : ""}`;
+    `https://proxy-backend-1rfl.onrender.com/api/listings/search-category?limit=10&categoryId=${categoryId}${cursor ? `&cursor=${cursor}` : ""}`;
 
   const prefetchCategory = async (categoryId: string) => {
     try {
@@ -416,7 +416,6 @@ const index = () => {
                 pathname: "/(tabs)/(home)/category",
                 params: {
                   category: "Category",
-                  allCategories: JSON.stringify(categories?.categories || []),
                 },
               })
             }
@@ -435,7 +434,7 @@ const index = () => {
             [...Array(6)].map((_, index) => (
               <View
                 key={`skeleton-${index}`}
-                className="w-[32%] h-[140px] bg-gray-100 rounded-2xl mb-4 animate-pulse"
+                className="w-[32%] h-[100px] bg-gray-100 rounded-2xl mb-4 animate-pulse"
               />
             ))
           ) : isError ? (
@@ -473,15 +472,12 @@ const index = () => {
                       params: {
                         id: item.id,
                         category: item.name,
-                        allCategories: JSON.stringify(
-                          categories?.categories || []
-                        ),
                       },
                     })
                   }
                   key={item.id}
                   activeOpacity={0.85}
-                  className={`w-[32%] p-0 mb-4`}
+                  className={`w-[32%] h-[130px] p-0 mb-4`}
                   style={{
                     elevation: 10,
                     shadowColor: "#000",
@@ -493,7 +489,7 @@ const index = () => {
                   }}
                 >
                   {item?.imageUrl ? (
-                    <View style={{ height: 140, borderRadius: 16, overflow: 'hidden' }}>
+                    <View style={{ height: 130, borderRadius: 16, overflow: 'hidden' }}>
                       <Image
                         source={{ uri: item.imageUrl }}
                         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }}
@@ -679,15 +675,36 @@ const index = () => {
         <View>
           <View className="mt-8 flex-row justify-between items-center">
             <Text className="text-xl font-NunitoMedium text-textColor-100">Jobs & Services</Text>
-            {categories?.categories && (
+            {categories?.categories && categories.categories.length > 0 && (
               <TouchableOpacity
                 onPress={() => {
-                  const jobsCat = categories.categories.find((c:any) => (c.name||c.title||"").toLowerCase() === 'jobs');
-                  if (jobsCat) {
-                    router.push({ pathname: '/(tabs)/(home)/category', params: { category: jobsCat.name || jobsCat.title, id: String(jobsCat.id), allCategories: JSON.stringify(categories?.categories || []) } });
+                  // Find jobs or services category
+                  const jobsCat = categories.categories.find((c:any) =>
+                    (c.name||c.title||"").toLowerCase().includes('job')
+                  );
+                  const servicesCat = categories.categories.find((c:any) =>
+                    (c.name||c.title||"").toLowerCase().includes('service')
+                  );
+
+                  // Try jobs first, then services, then fallback to category listing
+                  let targetCat = jobsCat || servicesCat;
+
+                  if (targetCat) {
+                    console.log('Navigating to category:', targetCat.name || targetCat.title, 'ID:', targetCat.id);
+                    router.push({
+                      pathname: '/(tabs)/(home)/category',
+                      params: {
+                        category: targetCat.name || targetCat.title,
+                        id: String(targetCat.id),
+                      }
+                    });
                   } else {
-                    const servicesCat = categories.categories.find((c:any) => (c.name||c.title||"").toLowerCase() === 'services');
-                    if (servicesCat) router.push({ pathname: '/(tabs)/(home)/category', params: { category: servicesCat.name || servicesCat.title, id: String(servicesCat.id), allCategories: JSON.stringify(categories?.categories || []) } });
+                    // Fallback: navigate to general listings
+                    console.log('No jobs/services category found, available categories:', categories.categories.map((c: any) => c.name || c.title));
+                    router.push({
+                      pathname: "/(tabs)/(home)/listings",
+                      params: { route: "Jobs & Services" },
+                    });
                   }
                 }}
                 className="flex-row items-center gap-1"
@@ -696,6 +713,7 @@ const index = () => {
                 <MaterialIcons name="arrow-forward-ios" size={18} color="#004CFF" />
               </TouchableOpacity>
             )}
+          </View>
           </View>
           <View className="flex flex-row flex-wrap justify-between gap-1">
             {(() => {
@@ -724,7 +742,7 @@ const index = () => {
               ));
             })()}
           </View>
-        </View>
+        
 
         {/* New Listing */}
         <View>

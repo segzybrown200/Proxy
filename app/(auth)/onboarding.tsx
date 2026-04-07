@@ -44,32 +44,45 @@ const slides = [
   },
 ];
 
-const backgroundVideo = "https://res.cloudinary.com/doemqvrzy/video/upload/v1771377240/Proxy_Video_2_loxnuo.mp4";
+const backgroundVideo = require('../../assets/Proxy.mp4');
+const fallbackVideo = "https://res.cloudinary.com/doemqvrzy/video/upload/v1771377240/Proxy_Video_2_loxnuo.mp4";
 
 const Onboarding = () => {
   const [index, setIndex] = useState(0);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
   const scrollRef = useRef<ScrollView | null>(null);
 
-  // Create a single video player for background
+  // Create video player with local video first
   const player = useVideoPlayer(backgroundVideo, (player) => {
     player.loop = true;
     player.muted = true;
-    // Don't autoplay - wait for ready event
+  });
+
+  // Fallback player for remote video
+  const fallbackPlayer = useVideoPlayer(fallbackVideo, (player) => {
+    player.loop = true;
+    player.muted = true;
   });
 
   useEffect(() => {
     if (!player) return;
 
-    // Listen to status changes
+    // Listen to status changes for local video
     const subscription = player.addListener('statusChange', (status) => {
-      player.play()
       if (status.status === 'readyToPlay') {
         setIsVideoReady(true);
-        // Start playing after it's loaded
         if (!player.playing) {
           player.play();
+        }
+      } else if (status.status === 'error') {
+        // Local video failed, try fallback
+        console.log('Local video failed, switching to remote video');
+        setUsingFallback(true);
+        setVideoError(false);
+        if (fallbackPlayer) {
+          fallbackPlayer.play();
         }
       }
     });
@@ -77,7 +90,27 @@ const Onboarding = () => {
     return () => {
       subscription?.remove();
     };
-  }, [player]);
+  }, [player, fallbackPlayer]);
+
+  // Handle fallback video status
+  useEffect(() => {
+    if (!fallbackPlayer || !usingFallback) return;
+
+    const fallbackSubscription = fallbackPlayer.addListener('statusChange', (status) => {
+      if (status.status === 'readyToPlay') {
+        setIsVideoReady(true);
+        if (!fallbackPlayer.playing) {
+          fallbackPlayer.play();
+        }
+      } else if (status.status === 'error') {
+        setVideoError(true);
+      }
+    });
+
+    return () => {
+      fallbackSubscription?.remove();
+    };
+  }, [fallbackPlayer, usingFallback]);
 
   const handleVisitor = () => router.push({ pathname: "/(auth)/location", params: { visitor: "true" } });
 
@@ -100,7 +133,7 @@ const Onboarding = () => {
       {/* Background Video - Plays continuously */}
       <View style={{ position: "absolute", width: "100%", height: "100%", overflow: "hidden" }}>
         <VideoView
-          player={player}
+          player={usingFallback ? fallbackPlayer : player}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
           nativeControls={false}
@@ -110,12 +143,17 @@ const Onboarding = () => {
         {!isVideoReady && !videoError && (
           <View style={{ position: "absolute", width: "100%", height: "100%", justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)" }}>
             <ActivityIndicator size="large" color="#ffffff" />
+            <Text className="text-white mt-4 font-NunitoRegular">Loading video...</Text>
           </View>
         )}
 
         {/* Fallback overlay if video fails */}
         {videoError && (
-          <View style={{ position: "absolute", width: "100%", height: "100%", backgroundColor: "#1a1a1a" }} />
+          <View style={{ position: "absolute", width: "100%", height: "100%", backgroundColor: "#1a1a1a", justifyContent: "center", alignItems: "center" }}>
+            <Text className="text-white font-NunitoRegular text-center px-8">
+              Video unavailable. Enjoy the onboarding experience!
+            </Text>
+          </View>
         )}
       </View>
 

@@ -231,7 +231,7 @@ useEffect(() => {
   const session = useSessionContext();
   const { emitTyping, emitStopTyping, ackDelivered, sendMessage, sendMediaMessage, getSocket, onSocketReady } = session || {};
 
-  const API_URL = "https://proxy-backend-6of2.onrender.com/api";
+  const API_URL = "https://proxy-backend-1rfl.onrender.com/api";
   const visibleMessages = useRef(new Set<string>());
 
   useEffect(() => {

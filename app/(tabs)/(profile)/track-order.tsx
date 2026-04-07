@@ -17,7 +17,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import io from "socket.io-client";
 
-const socket = io("https://proxy-backend-6of2.onrender.com");
+const socket = io("https://proxy-backend-1rfl.onrender.com");
 
 // Helper function to calculate distance between two coordinates (Haversine formula)
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {

@@ -49,7 +49,7 @@ export const useCategoryListings = (
 
     const cursor = pageIndex === 0 ? "" : previousPageData.nextCursor;
 
-    let url = `https://proxy-backend-6of2.onrender.com/api/listings/search-category?limit=10`;
+    let url = `https://proxy-backend-1rfl.onrender.com/api/listings/search-category?limit=10`;
 
     // Add filters
     if (categoryId) url += `&categoryId=${categoryId}`;

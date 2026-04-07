@@ -16,13 +16,14 @@ import { useEffect, useMemo } from "react";
 import { AntDesign, Feather, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useCategoryListings } from "hooks/useHooks";
+import { useCategoryListings, useCategory } from "hooks/useHooks";
 
 
 const category = () => {
   const [selected, setSelected] = useState<string[]>([]);
   const params = useLocalSearchParams();
-  const { category, allCategories, id, subCategoryId } = params;
+  const { category, id, subCategoryId } = params;
+  const { categories } = useCategory();
   const { listings, isLoading, loadMore, isReachingEnd } = useCategoryListings(
     {
       categoryId: id as string | undefined,
@@ -30,15 +31,7 @@ const category = () => {
     }
 
   );
-  const backendCategories: any = useMemo(() => {
-    if (allCategories) {
-      try {
-        const parsed = JSON.parse(allCategories as string);
-        if (Array.isArray(parsed)) return parsed;
-      } catch {}
-    }
-    return null;
-  }, [allCategories]);
+  const backendCategories: any = useMemo(() => categories?.categories || [], [categories]);
   const selectedCategory =
     backendCategories?.find((c: any) => String(c.id) === String(id)) || null;
 
@@ -130,7 +123,6 @@ const category = () => {
             params: {
               category: item.name || item.title,
               id: String(item.id),
-              allCategories: JSON.stringify(backendCategories || []),
             },
           })
         }
@@ -270,9 +262,6 @@ const category = () => {
                             id: String(selectedCategory?.id),
                             subCategoryId: String(sub.id),
                             subCategoryName: sub.name,
-                            allCategories: JSON.stringify(
-                              backendCategories || []
-                            ),
                           },
                         })
                       }
@@ -337,7 +326,7 @@ const category = () => {
             renderItem={renderCategory}
             numColumns={2}
             columnWrapperStyle={{ justifyContent: 'space-between' }}
-            contentContainerStyle={{ paddingBottom: 140, paddingTop: 10 }}
+            contentContainerStyle={{ paddingBottom: 300, paddingTop: 10 }}
             showsVerticalScrollIndicator={false}
           />
         </View>

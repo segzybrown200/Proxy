@@ -181,7 +181,7 @@ export default function ActiveDeliveryDetails() {
 
       // Call backend instead of Google Maps directly
       const res = await axios.get(
-        "https://proxy-backend-6of2.onrender.com/api/search/get-direction",
+        "https://proxy-backend-1rfl.onrender.com/api/search/get-direction",
         {
           params: {
             originLat: origin.latitude,

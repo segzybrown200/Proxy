@@ -1,7 +1,7 @@
 // api.ts
 import axios from "axios";
 
-const API_URL = "https://proxy-backend-6of2.onrender.com/api";
+const API_URL = "https://proxy-backend-1rfl.onrender.com/api";
 
 export const api = axios.create({
   baseURL: API_URL,

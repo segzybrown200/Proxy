@@ -11,8 +11,8 @@ import Constants from 'expo-constants';
 /* ==============================
    🔧 CONFIGURATION
    ============================== */
-const API_URL = "https://proxy-backend-6of2.onrender.com/api"; // change to your backend base
-const SOCKET_URL = "https://proxy-backend-6of2.onrender.com"; // same origin as backend
+const API_URL = "https://proxy-backend-1rfl.onrender.com/api"; // change to your backend base
+const SOCKET_URL = "https://proxy-backend-1rfl.onrender.com"; // same origin as backend
 
 /* ==============================
    🧠 HOOK: useSessionAndSocket

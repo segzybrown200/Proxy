@@ -25,7 +25,7 @@ type AddressCoords = {
   latitude?: number;
   longitude?: number;
 };
-const API_BASE_URL = 'https://proxy-backend-6of2.onrender.com/api' // replace with your backend API base URL
+const API_BASE_URL = 'https://proxy-backend-1rfl.onrender.com/api' // replace with your backend API base URL
 const AddAddress = () => {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
