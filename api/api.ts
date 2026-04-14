@@ -94,6 +94,13 @@ export const searchListings = async(params: Record<string, any>) => {
     throw error.response?.data || error;
   });
 }
+
+export const getListingDetails = async(listingId: string) => {
+  return api.get(`/listings/listing/${listingId}`).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
 export const markMessagesAsRead = async(senderId: string, token: string) => {
   return api.post("/messages/read", { senderId }, {
     headers: {

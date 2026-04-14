@@ -1,4 +1,4 @@
-import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getNewListings, getOrders, getPopularListings, getRiderHeldEscrowTransactions, getRiderHistory, getRiderStatus, getSingleDeliveryOrder, getWalletBalance } from "api/api"
+import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getListingDetails, getNewListings, getOrders, getPopularListings, getRiderHeldEscrowTransactions, getRiderHistory, getRiderStatus, getSingleDeliveryOrder, getWalletBalance } from "api/api"
 import { getWalletTransactions, getTransactionHistory, getRiderWalletBalance, getRiderWalletHistory } from "api/api"
 import axios from "axios";
 import useSWR  from "swr"
@@ -107,6 +107,30 @@ export const useSearchListings = (params: Record<string, any> | null) => {
   };
 };
 
+export const useListingDetails = (listingId: string | null | undefined) => {
+  const fetcher = async () => {
+    if (!listingId) return null;
+    const res = await getListingDetails(listingId);
+    return res.data?.data || null;
+  };
+
+  const { data, error, isLoading, mutate } = useSWR(
+    listingId ? `/listings/${listingId}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnMount: true,
+    }
+  );
+
+  return {
+    listing: data,
+    isLoading,
+    isError: !!error,
+    mutate,
+  };
+};
+
 export const usePopularListings = ()=>{
     const fetcher = getPopularListings;
 
@@ -114,8 +138,9 @@ export const usePopularListings = ()=>{
      `/listings/popular`, fetcher,
     {
       revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      revalidateOnMount: true, // Ensure it fetches when the component 
+      revalidateOnReconnect: false,
+      revalidateOnMount: true,
+      dedupingInterval: 60000,
     }
   );
     return {
@@ -133,8 +158,9 @@ export const useNewListings = ()=>{
      `/listings/new` , fetcher,
     {
       revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      revalidateOnMount: true, // Ensure it fetches when the component 
+      revalidateOnReconnect: false,
+      revalidateOnMount: true,
+      dedupingInterval: 60000,
     }
   );
 

@@ -18,7 +18,7 @@ import { selectUser } from "../../global/authSlice";
 import { setKycDocuments } from "../../global/riderSlice";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
-import * as ImageManipulator from 'expo-image-manipulator';
+import * as ImageManipulator from 'expo-image-manipulator'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { riderKYCUpload, verifyNinNumber } from "../../api/api";
 import { showError, showSuccess } from "../../utils/toast";
@@ -163,18 +163,34 @@ const KYCVerification = () => {
 
     setVerifyingNin(true);
     try {
-      const response = await verifyNinNumber(ninNumber);
-      
-      if (response?.data?.status === 'error') {
-        showError(response.data.message || "NIN verification failed");
-        return;
+      // Check if we have cached verification data for this NIN
+      const cachedData = await AsyncStorage.getItem('ninVerificationData');
+      let verificationData = null;
+      let isFromCache = false;
+
+      if (cachedData) {
+        const parsed = JSON.parse(cachedData);
+        if (parsed.nin === ninNumber) {
+          verificationData = parsed.verificationData;
+          isFromCache = true;
+        }
       }
 
-      // Get verification data
-      const verificationData = response.data?.data?.verificationData?.data;
-      if (!verificationData) {
-        showError("Invalid response from verification service");
-        return;
+      if (!isFromCache) {
+        // No cache, call API
+        const response = await verifyNinNumber(ninNumber);
+        
+        if (response?.data?.status === 'error') {
+          showError(response.data.message || "NIN verification failed");
+          return;
+        }
+
+        // Get verification data
+        verificationData = response.data?.data?.verificationData?.data;
+        if (!verificationData) {
+          showError("Invalid response from verification service");
+          return;
+        }
       }
 
       // Extract and normalize names from verification data
@@ -185,17 +201,42 @@ const KYCVerification = () => {
       // Normalize personal info names
       const personalFullName = normalizeName(personalInfo?.fullName || '');
 
+      const getNameTokens = (name: string) =>
+        name
+          .toLowerCase()
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((token) => token.replace(/[^a-z]/g, ''))
+          .filter(Boolean);
+
+      const nameTokensMatch = (firstName: string, secondName: string) => {
+        const firstTokens = getNameTokens(firstName);
+        const secondTokens = getNameTokens(secondName);
+        const common = firstTokens.filter((token) => secondTokens.includes(token));
+        return common.length >= 2;
+      };
+
       // Extract DOB from verification data (could be 'birthdate' or 'dob')
       const verifiedDob = verificationData.birthdate || verificationData.dob;
       const personalDob = formatDate(personalInfo?.dateOfBirth || '');
 
-      // Check if names match
-      const namesMatch = personalFullName.includes(verifiedFullName) || 
-                        verifiedFullName.includes(personalFullName) ||
-                        personalFullName === verifiedFullName;
+      // Check if names match by at least two common tokens, regardless of order
+      const namesMatch =
+        nameTokensMatch(personalFullName, verifiedFullName) ||
+        personalFullName === verifiedFullName;
 
       // Check if DOB matches
       const dobMatches = verifiedDob && formatDate(verifiedDob) === personalDob;
+
+      // Save verification data locally regardless of match/mismatch to avoid repeated API calls
+      await AsyncStorage.setItem('ninVerificationData', JSON.stringify({
+        nin: ninNumber,
+        verificationData: verificationData,
+        verifiedAt: new Date().toISOString(),
+        namesMatch: namesMatch,
+        dobMatches: dobMatches
+      }));
 
       if (!namesMatch || !dobMatches) {
         Alert.alert(
@@ -219,18 +260,11 @@ const KYCVerification = () => {
         return;
       }
 
-      // If all matches, save verification data and proceed
-      await AsyncStorage.setItem('ninVerificationData', JSON.stringify({
-        nin: ninNumber,
-        verificationData: verificationData,
-        verifiedAt: new Date().toISOString()
-      }));
-
-      // Save verified state for UI
+      // If all matches, save verified state for UI
       setVerifiedNin(true);
       setVerifiedInfo({ fullName: toTitleCase(verifiedFullName), dob: formatDate(verifiedDob) });
 
-      showSuccess("NIN verified successfully!");
+      showSuccess(isFromCache ? "NIN verified from cache!" : "NIN verified successfully!");
       // Can now allow document upload
     } catch (error: any) {
       console.error('NIN verification error:', error);
@@ -308,10 +342,15 @@ const KYCVerification = () => {
       return;
     }
 
-    // Check if NIN was verified (has verification data in storage)
+    // Check if NIN was verified (has verification data in storage and matches)
     try {
       const verificationData = await AsyncStorage.getItem('ninVerificationData');
       if (!verificationData) {
+        Alert.alert("Missing Information", "Please verify your NIN first by clicking the 'Verify NIN' button.");
+        return;
+      }
+      const parsed = JSON.parse(verificationData);
+      if (parsed.nin !== ninNumber || !parsed.namesMatch || !parsed.dobMatches) {
         Alert.alert("Missing Information", "Please verify your NIN first by clicking the 'Verify NIN' button.");
         return;
       }

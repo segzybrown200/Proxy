@@ -316,18 +316,7 @@ const index = () => {
     setRefreshing(false);
   };
 
-  if (isLoading || PopularisLoading || NewListingsLocading) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#004CFF" />
-        <Text className="mt-3 font-NunitoMedium text-gray-500">
-          Loading dashboard...
-        </Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (isError || NewError || popularError) {
+  if ((isError || NewError || popularError) && !categories && !NewListing && !popular) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-white">
         <Text className="text-red-500 font-NunitoSemiBold">
@@ -582,7 +571,6 @@ const index = () => {
               <Text className="text-lg font-NunitoBold text-primary-100">
                 View All
               </Text>
-              {/* <FontAwesome6 name="arrow-right-long" size={18} color="#004CFF" /> */}
               <MaterialIcons
                 name="arrow-forward-ios"
                 size={18}
@@ -593,81 +581,94 @@ const index = () => {
 
           {/* List of Popular Selling Items */}
           <View className="flex flex-row flex-wrap justify-between gap-1">
-            {popular?.data?.slice(0, 4).map((item: any) => (
-              <TouchableOpacity
-                key={item?.id}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(tabs)/(home)/details",
-                    params: { item: JSON.stringify(item) },
-                  })
-                }
-                className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden"
-                style={{ height: 240, position: 'relative' }}
-              >
-                <View style={{ flex: 1, position: 'relative' }}>
-                  <Image
-                    source={{
-                      uri:
-                        item?.media?.find(
-                          (media: any) => media.mimeType === "image/jpeg"
-                        )?.url || item?.media[0]?.url,
-                    }}
-                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                    contentFit="cover"
-                    onLoad={() => item?.id}
-                    onError={(error) =>
-                      console.log(
-                        "Image load error:",
-                        error
-                      )
-                    }
-                  />
-                  <LinearGradient
-                    colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)'] as any}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      padding: 10,
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <View className="flex-row mt-10 justify-between items-start">
-                      <Text
-                        numberOfLines={2}
-                        className="text-lg font-NunitoExtraBold text-white w-[70%]"
-                      >
-                        {item?.title}
-                      </Text>
-                      <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center">
-                        <FontAwesome6 name="plus" size={18} color="white" />
-                      </TouchableOpacity>
-                    </View>
-                    <View>
-                      <Text className="text-[22px] font-RalewayExtraBold text-white">
-                        {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
-                      </Text>
-                      <Text className="bg-primary-100 text-lg rounded-lg text-white p-2 font-NunitoSemiBold flex flex-row justify-center items-center mt-2">
-                        {item?.condition.toUpperCase()}
-                      </Text>
-                      <Text className="font-NunitoMedium text-lg text-white">
-                        {item?.seller?.vendorApplication?.location?.city}, {item?.seller?.vendorApplication?.location?.country}
-                      </Text>
-                    </View>
-                  </LinearGradient>
-                </View>
-                <View className="bg-primary-100 p-2 rounded-b-lg absolute top-2 right-2" style={{ zIndex: 0, elevation: 0 }}>
-                  <Text className="text-white font-NunitoLight">
-                    Verified ID
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {PopularisLoading && (!popular?.data || popular.data.length === 0) ? (
+              [...Array(4)].map((_, index) => (
+                <View
+                  key={`popular-skeleton-${index}`}
+                  className="mt-5 w-[49%] rounded-lg bg-gray-200 animate-pulse"
+                  style={{ height: 240 }}
+                />
+              ))
+            ) : popular?.data && popular.data.length > 0 ? (
+              popular.data.slice(0, 4).map((item: any) => (
+                <TouchableOpacity
+                  key={item?.id}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/(home)/details",
+                      params: { id: item.id },
+                    })
+                  }
+                  className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden"
+                  style={{ height: 240, position: 'relative' }}
+                >
+                  <View style={{ flex: 1, position: 'relative' }}>
+                    <Image
+                      source={{
+                        uri:
+                          item?.media?.find(
+                            (media: any) => media.mimeType === "image/jpeg"
+                          )?.url || item?.media[0]?.url,
+                      }}
+                      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                      contentFit="cover"
+                      onError={(error) =>
+                        console.log(
+                          "Image load error:",
+                          error
+                        )
+                      }
+                    />
+                    <LinearGradient
+                      colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)'] as any}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        padding: 10,
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <View className="flex-row mt-10 justify-between items-start">
+                        <Text
+                          numberOfLines={2}
+                          className="text-lg font-NunitoExtraBold text-white w-[70%]"
+                        >
+                          {item?.title}
+                        </Text>
+                        <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center">
+                          <FontAwesome6 name="plus" size={18} color="white" />
+                        </TouchableOpacity>
+                      </View>
+                      <View>
+                        <Text className="text-[22px] font-RalewayExtraBold text-white">
+                          {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
+                        </Text>
+                        <Text className="bg-primary-100 text-lg rounded-lg text-white p-2 font-NunitoSemiBold flex flex-row justify-center items-center mt-2">
+                          {item?.condition.toUpperCase()}
+                        </Text>
+                        <Text className="font-NunitoMedium text-lg text-white">
+                          {item?.seller?.vendorApplication?.location?.city}, {item?.seller?.vendorApplication?.location?.country}
+                        </Text>
+                      </View>
+                    </LinearGradient>
+                  </View>
+                  <View className="bg-primary-100 p-2 rounded-b-lg absolute top-2 right-2" style={{ zIndex: 0, elevation: 0 }}>
+                    <Text className="text-white font-NunitoLight">
+                      Verified ID
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text className="text-gray-500 font-NunitoMedium w-full text-center py-4">
+                No popular listings found
+              </Text>
+            )}
           </View>
         </View>
 
@@ -678,7 +679,6 @@ const index = () => {
             {categories?.categories && categories.categories.length > 0 && (
               <TouchableOpacity
                 onPress={() => {
-                  // Find jobs or services category
                   const jobsCat = categories.categories.find((c:any) =>
                     (c.name||c.title||"").toLowerCase().includes('job')
                   );
@@ -686,7 +686,6 @@ const index = () => {
                     (c.name||c.title||"").toLowerCase().includes('service')
                   );
 
-                  // Try jobs first, then services, then fallback to category listing
                   let targetCat = jobsCat || servicesCat;
 
                   if (targetCat) {
@@ -699,7 +698,6 @@ const index = () => {
                       }
                     });
                   } else {
-                    // Fallback: navigate to general listings
                     console.log('No jobs/services category found, available categories:', categories.categories.map((c: any) => c.name || c.title));
                     router.push({
                       pathname: "/(tabs)/(home)/listings",
@@ -714,15 +712,22 @@ const index = () => {
               </TouchableOpacity>
             )}
           </View>
-          </View>
           <View className="flex flex-row flex-wrap justify-between gap-1">
-            {(() => {
+            {jobsLoading && servicesLoading && jobsListings.length === 0 && servicesListings.length === 0 ? (
+              [...Array(4)].map((_, index) => (
+                <View
+                  key={`jobs-skeleton-${index}`}
+                  className="mt-5 w-[49%] rounded-lg bg-gray-200 animate-pulse"
+                  style={{ height: 240 }}
+                />
+              ))
+            ) : (() => {
               const combined = [...(jobsListings || []), ...(servicesListings || [])];
               const map = new Map<string, any>();
               combined.forEach((it: any) => { if (it?.id) map.set(it.id, it); });
               const uniq = Array.from(map.values()).slice(0,4);
-              return uniq.map((item:any) => (
-                <TouchableOpacity key={item?.id} onPress={() => router.push({ pathname: '/(tabs)/(home)/details', params: { item: JSON.stringify(item) } })} className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden" style={{ height: 240, position:'relative' }}>
+              return uniq.length > 0 ? uniq.map((item:any) => (
+                <TouchableOpacity key={item?.id} onPress={() => router.push({ pathname: '/(tabs)/(home)/details', params: { id: item.id } })} className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden" style={{ height: 240, position:'relative' }}>
                   <View style={{ flex: 1, position: 'relative' }}>
                     <Image source={{ uri: item?.media?.[0]?.url }} style={{ position: 'absolute', top:0, left:0, right:0, bottom:0 }} contentFit="cover" onError={(e)=>console.log('Jobs&Services image error', e)} />
                     <LinearGradient colors={['rgba(0,0,0,0.5)','rgba(0,0,0,0.2)'] as any} start={{x:0,y:0}} end={{x:1,y:1}} style={{ position:'absolute', top:0,left:0,right:0,bottom:0,padding:10, justifyContent:'space-between' }}>
@@ -739,10 +744,12 @@ const index = () => {
                   </View>
                   <View className="bg-primary-100 p-2 rounded-b-lg absolute bottom-2 right-2" style={{ zIndex: 0, elevation: 0 }}><Text className="text-white font-NunitoLight">Verified ID</Text></View>
                 </TouchableOpacity>
-              ));
+              )) : (
+                <Text className="text-gray-500 font-NunitoMedium w-full text-center py-4">No jobs or services available</Text>
+              );
             })()}
           </View>
-        
+        </View>
 
         {/* New Listing */}
         <View>
@@ -771,84 +778,97 @@ const index = () => {
             </TouchableOpacity>
           </View>
           <View className="flex flex-row flex-wrap justify-between gap-1">
-            {NewListing?.data?.slice(0, 4).map((item: any) => (
-              <TouchableOpacity
-                key={item?.id}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(tabs)/(home)/details",
-                    params: { item: JSON.stringify(item) },
-                  })
-                }
-                className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden"
-                style={{ height: 240, position: 'relative' }}
-              >
-                {(() => {
-                  const jpegImage = item?.media?.find(
-                    (media: any) => media.mimeType === "image/jpeg"
-                  );
-                  const imageUrl = jpegImage?.url || item?.media[0]?.url;
-                  return (
-                    <View style={{ flex: 1, position: 'relative' }}>
-                      <Image
-                        source={{ uri: imageUrl }}
-                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                        contentFit="cover"
-                        onLoad={() => item?.id}
-                        onError={(error) =>
-                          console.log(
-                            "Image load error:",
-                            error
-                          )
-                        }
-                      />
-                      <LinearGradient
-                        colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)'] as any}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          padding: 10,
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <View className="flex-row justify-between items-start">
-                          <Text
-                            numberOfLines={2}
-                            className="text-lg font-NunitoRegular text-white w-[70%]"
-                          >
-                            {item?.title}
-                          </Text>
-                          <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center">
-                            <FontAwesome6 name="plus" size={18} color="white" />
-                          </TouchableOpacity>
-                        </View>
-                        <View>
-                          <Text className="text-[22px] font-RalewayExtraBold text-white">
-                            {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
-                          </Text>
-                          <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center mt-2">
-                            {item?.condition.toUpperCase()}
-                          </Text>
-                          <Text className="font-NunitoMedium text-lg text-white">
-                            {item?.seller?.vendorApplication?.location?.city}, {item?.seller?.vendorApplication?.location?.country}
-                          </Text>
-                        </View>
-                      </LinearGradient>
-                    </View>
-                  );
-                })()}
-                <View className="bg-primary-100 p-2 rounded-b-lg absolute bottom-2 right-2" style={{ zIndex: 0, elevation: 0 }}>
-                  <Text className="text-white font-NunitoLight">
-                    Verified ID
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {NewListingsLocading && (!NewListing || NewListing.length === 0) ? (
+              [...Array(4)].map((_, index) => (
+                <View
+                  key={`newlist-skeleton-${index}`}
+                  className="mt-5 w-[49%] rounded-lg bg-gray-200 animate-pulse"
+                  style={{ height: 240 }}
+                />
+              ))
+            ) : NewListing?.data && NewListing.data.length > 0 ? (
+              NewListing.data.slice(0, 4).map((item: any) => (
+                <TouchableOpacity
+                  key={item?.id}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/(home)/details",
+                      params: { id: item.id },
+                    })
+                  }
+                  className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden"
+                  style={{ height: 240, position: 'relative' }}
+                >
+                  {(() => {
+                    const jpegImage = item?.media?.find(
+                      (media: any) => media.mimeType === "image/jpeg"
+                    );
+                    const imageUrl = jpegImage?.url || item?.media[0]?.url;
+                    return (
+                      <View style={{ flex: 1, position: 'relative' }}>
+                        <Image
+                          source={{ uri: imageUrl }}
+                          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                          contentFit="cover"
+                          onError={(error) =>
+                            console.log(
+                              "Image load error:",
+                              error
+                            )
+                          }
+                        />
+                        <LinearGradient
+                          colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)'] as any}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            padding: 10,
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <View className="flex-row justify-between items-start">
+                            <Text
+                              numberOfLines={2}
+                              className="text-lg font-NunitoRegular text-white w-[70%]"
+                            >
+                              {item?.title}
+                            </Text>
+                            <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center">
+                              <FontAwesome6 name="plus" size={18} color="white" />
+                            </TouchableOpacity>
+                          </View>
+                          <View>
+                            <Text className="text-[22px] font-RalewayExtraBold text-white">
+                              {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
+                            </Text>
+                            <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center mt-2">
+                              {item?.condition.toUpperCase()}
+                            </Text>
+                            <Text className="font-NunitoMedium text-lg text-white">
+                              {item?.seller?.vendorApplication?.location?.city}, {item?.seller?.vendorApplication?.location?.country}
+                            </Text>
+                          </View>
+                        </LinearGradient>
+                      </View>
+                    );
+                  })()}
+                  <View className="bg-primary-100 p-2 rounded-b-lg absolute bottom-2 right-2" style={{ zIndex: 0, elevation: 0 }}>
+                    <Text className="text-white font-NunitoLight">
+                      Verified ID
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text className="text-gray-500 font-NunitoMedium w-full text-center py-4">
+                No new listings found
+              </Text>
+            )}
           </View>
         </View>
       </ScrollView>

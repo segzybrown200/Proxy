@@ -22,6 +22,7 @@ import * as FileSystem from "expo-file-system";
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as Yup from "yup";
 import { RootState } from "global/store";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const registrationSteps = [
   { title: "Personal", icon: "account" },
@@ -186,6 +187,9 @@ const VehicleDetails = () => {
         insurance: formData.document,
         photos: [formData.frontView, formData.backView],
       }));
+      
+      // Clear cached NIN verification data since vehicle documents are now successful
+      await AsyncStorage.removeItem('ninVerificationData');
       
       router.push("rider/confirmation");
     } catch (err) {

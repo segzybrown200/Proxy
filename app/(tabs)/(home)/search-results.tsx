@@ -24,7 +24,7 @@ const SearchResults = () => {
 
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
-      onPress={() => router.push({ pathname: "./details", params: { item: JSON.stringify(item) } })}
+      onPress={() => router.push({ pathname: "./details", params: { id: item.id } })}
       className="mt-5 w-[49%] border border-primary-100 rounded-lg"
     >
       <Image source={{ uri: item?.media?.[0]?.url }} className=" w-full h-40 rounded-lg border-4 border-white shadow-2xl" />

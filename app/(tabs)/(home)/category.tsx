@@ -50,7 +50,7 @@ const category = () => {
       onPress={() =>
         router.push({
           pathname: "/(tabs)/(home)/details",
-          params: { item: JSON.stringify(item) },
+          params: { id: item.id },
         })
       }
       className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden"
