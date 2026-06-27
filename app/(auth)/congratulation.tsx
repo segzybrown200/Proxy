@@ -3,9 +3,9 @@ import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native";
 import { router } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
-import { loginState, pendingUserLogout, selectPendingUser } from "global/authSlice";
-import { loginUser } from "api/api";
-import { showError } from "utils/toast";
+import { loginState, pendingUserLogout, selectPendingUser } from "../../global/authSlice";
+import { loginUser } from "../../api/api";
+import { showError } from "../../utils/toast";
 
 const congratulation = () => {
   const select:any = useSelector(selectPendingUser)

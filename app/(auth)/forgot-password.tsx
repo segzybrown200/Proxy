@@ -14,8 +14,8 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { router } from 'expo-router';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { forgotPassword } from 'api/api';
-import { showError } from 'utils/toast';
+import { forgotPassword } from '../../api/api';
+import { showError } from '../../utils/toast';
 
 const Schema = yup.object({
   email: yup.string().email().required('Email is required'),

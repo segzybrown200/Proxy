@@ -16,7 +16,7 @@ import { useEffect, useMemo } from "react";
 import { AntDesign, Feather, FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useCategoryListings, useCategory } from "hooks/useHooks";
+import { useCategoryListings, useCategory } from "../../../hooks/useHooks";
 
 
 const category = () => {

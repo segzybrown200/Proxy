@@ -10,8 +10,8 @@ import CustomButton from "../../components/CustomButton";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import Fontisto from '@expo/vector-icons/Fontisto';
 import { router, useLocalSearchParams } from "expo-router";
-import { sendOTPEmail } from "api/api";
-import { showError } from "utils/toast";
+import { sendOTPEmail } from "../../api/api";
+import { showError } from "../../utils/toast";
 
 const verifyOptions = () => {
   const [isSubmitting, setisSubmitting] = useState(false);

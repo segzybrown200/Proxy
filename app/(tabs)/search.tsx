@@ -16,7 +16,7 @@ import Dashboard from "../../assets/icons/Dashboard.svg";
 import { SearchComponent } from "../../components/SearchInput";
 import Filter from "../../assets/icons/filter.svg";
 import { router } from "expo-router";
-import { useCategory } from "hooks/useHooks";
+import { useCategory } from "../../hooks/useHooks";
 
 
 const condition = ["new", "used"];

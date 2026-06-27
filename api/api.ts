@@ -160,6 +160,16 @@ export const getUserAuth = async(token:string) => {
   });
 }
 
+export const reportContent = async(data: { targetType: string; targetId: string; reason: string }, token: string) => {
+  return api.post('/reports', data, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }).catch((error) => {
+    throw error.response?.data || error;
+  });
+}
+
 // Create a Stripe PaymentIntent on the server.
 // The backend should implement an endpoint that accepts { amount, currency }
 // and returns { clientSecret } (the PaymentIntent client_secret).

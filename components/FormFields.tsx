@@ -70,7 +70,7 @@ const FormField:React.FC<IData> = ({
         )}
       </View>
     </View>
-     {errors && errors[name] && <Text className="text-red-500 font-NunitoLight text-[13px] mt-[10px]">{errors[name]?.message}</Text>}
+     {errors && name && errors[name] && <Text className="text-red-500 font-NunitoLight text-[13px] mt-[10px]">{String(errors[name]?.message)}</Text>}
     </>
   );
 };

@@ -13,15 +13,15 @@ import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useRef, useState } from "react";
-import { formatCurrency } from "utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addToCart,
   selectCartItems,
   increaseQuantity,
   decreaseQuantity,
-} from "global/listingSlice";
-import { selectUser } from "global/authSlice";
+} from "../../../global/listingSlice";
+import { selectUser } from "../../../global/authSlice";
 import { useListingDetails, useSearchListings } from "../../../hooks/useHooks";
 import { showError } from "../../../utils/toast";
 
@@ -232,20 +232,37 @@ const Details = () => {
                 </Text>
               </View>
             </View>
-            <TouchableOpacity
-              onPress={() =>
-                router.replace({
-                  pathname: "/(tabs)/(profile)/chat",
-                  params: {
-                    seller: JSON.stringify(item),
-                    user: JSON.stringify(user),
-                  },
-                })
-              }
-              className="bg-primary-100 px-3 py-2 rounded-md"
-            >
-              <Text className="text-white font-NunitoSemiBold">Start Chat</Text>
-            </TouchableOpacity>
+            <View className="flex-row items-center gap-2">
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: "/(tabs)/(profile)/report",
+                    params: {
+                      targetType: "LISTING",
+                      targetId: item?.id || item?.listingId || item?.slug || "",
+                      targetLabel: item?.title || "this listing",
+                    },
+                  })
+                }
+                className="rounded-md border border-gray-200 px-3 py-2"
+              >
+                <Text className="font-NunitoSemiBold text-gray-700">Report</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() =>
+                  router.replace({
+                    pathname: "/(tabs)/(profile)/chat",
+                    params: {
+                      seller: JSON.stringify(item),
+                      user: JSON.stringify(user),
+                    },
+                  })
+                }
+                className="bg-primary-100 px-3 py-2 rounded-md"
+              >
+                <Text className="text-white font-NunitoSemiBold">Start Chat</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* <View className="px-4 mt-8">

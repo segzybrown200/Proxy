@@ -21,9 +21,9 @@ import { router } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Apple from "../../assets/icons/Apple.svg"
 import Google from "../../assets/icons/Google.svg"
-import { loginState } from "global/authSlice";
-import { loginUser } from "api/api";
-import { showError } from "utils/toast";
+import { loginState } from "../../global/authSlice";
+import { loginUser } from "../../api/api";
+import { showError } from "../../utils/toast";
 
 const Login = () => {
   const [isSubmitting, setisSubmitting] = useState(false);
@@ -152,6 +152,10 @@ const Login = () => {
             <Apple/>
             <Google/>
           </View>
+
+          <TouchableOpacity onPress={() => router.push("/(auth)/choose-role")} className="mt-6 rounded-3xl border border-gray-200 py-4 items-center">
+            <Text className="text-base font-NunitoBold text-gray-800">Don’t have an account? Create one</Text>
+          </TouchableOpacity>
         </View>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -1,6 +1,6 @@
 import { router } from "expo-router";
-import { RootState } from "global/store";
-import { useUserOrder } from "hooks/useHooks";
+import { RootState } from "../../../global/store";
+import { useUserOrder } from "../../../hooks/useHooks";
 import React, { useMemo, useState } from "react";
 import {
   SafeAreaView,

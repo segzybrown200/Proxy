@@ -17,10 +17,10 @@ import { setPersonalInfo } from "../../global/riderSlice";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Yup from "yup";
-import CustomButton from "components/CustomButton";
-import { registerRider } from "api/api";
-import { RootState } from "global/store";
-import { showError } from "utils/toast";
+import CustomButton from "../../components/CustomButton";
+import { registerRider } from "../../api/api";
+import { RootState } from "../../global/store";
+import { showError } from "../../utils/toast";
 
 const validationSchema = Yup.object().shape({
   fullName: Yup.string()
@@ -44,7 +44,7 @@ const validationSchema = Yup.object().shape({
   vehicleType: Yup.string().required("Vehicle type is required"),
 });
 
-const registrationSteps = [
+const registrationSteps: any = [
   { title: "Personal", icon: "account" },
   { title: "Documents", icon: "file-document" },
   { title: "Vehicle", icon: "car" },

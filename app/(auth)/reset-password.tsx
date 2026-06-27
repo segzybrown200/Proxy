@@ -13,8 +13,8 @@ import * as yup from "yup";
 import FormField from "../../components/FormFields";
 import CustomButton from "../../components/CustomButton";
 import OtpTextInput from 'react-native-text-input-otp';
-import { showError, showSuccess } from "utils/toast";
-import { resendOTPEmail, resetPassword, sendOTPEmail } from "api/api";
+import { showError, showSuccess } from "../../utils/toast";
+import { resendOTPEmail, resetPassword, sendOTPEmail } from "../../api/api";
 import { router, useLocalSearchParams } from "expo-router";
 const Schema = yup.object({
   otp: yup.string().length(6, "OTP must be 6 digits").required("OTP is required"),

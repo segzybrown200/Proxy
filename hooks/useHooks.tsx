@@ -1,5 +1,5 @@
-import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getListingDetails, getNewListings, getOrders, getPopularListings, getRiderHeldEscrowTransactions, getRiderHistory, getRiderStatus, getSingleDeliveryOrder, getWalletBalance } from "api/api"
-import { getWalletTransactions, getTransactionHistory, getRiderWalletBalance, getRiderWalletHistory } from "api/api"
+import { getActiveDeliveries, getAllMessages, getCategory, getConversions, getListingDetails, getNewListings, getOrders, getPopularListings, getRiderHeldEscrowTransactions, getRiderHistory, getRiderStatus, getSingleDeliveryOrder, getWalletBalance } from "../api/api"
+import { getWalletTransactions, getTransactionHistory, getRiderWalletBalance, getRiderWalletHistory } from "../api/api"
 import axios from "axios";
 import useSWR  from "swr"
 import { SWRConfiguration } from "swr"

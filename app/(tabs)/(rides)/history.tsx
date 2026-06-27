@@ -4,8 +4,8 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSelector } from "react-redux";
-import { RootState } from "global/store";
-import { useRiderHistory } from "hooks/useHooks";
+import { RootState } from "../../../global/store";
+import { useRiderHistory } from "../../../hooks/useHooks";
 
 interface HistoryOrder {
 

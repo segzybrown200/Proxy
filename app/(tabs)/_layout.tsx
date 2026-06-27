@@ -11,7 +11,7 @@ import ProfileIconFocused from "../../assets/icons/profile-focused.svg";
 import BagIcon from "../../assets/icons/bag.svg";
 import BagIconFocused from "../../assets/icons/bag-focused.svg";
 import { useSelector } from "react-redux";
-import { selectCartItems } from "global/listingSlice";
+import { selectCartItems } from "../../global/listingSlice";
 
 const _layout = () => {
   const cartItems = useSelector(selectCartItems);

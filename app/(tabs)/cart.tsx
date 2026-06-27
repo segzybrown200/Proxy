@@ -10,12 +10,12 @@ import {
 } from "react-native";
 import { Image } from 'expo-image';
 import { useSelector, useDispatch } from "react-redux";
-import { selectCartItems, selectCartTotal, increaseQuantity, decreaseQuantity, removeFromCart } from "global/listingSlice";
-import { formatCurrency } from "utils/currency";
+import { selectCartItems, selectCartTotal, increaseQuantity, decreaseQuantity, removeFromCart } from "../../global/listingSlice";
+import { formatCurrency } from "../../utils/currency";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import CustomButton from "components/CustomButton";
-import { selectIsVisitor } from "global/authSlice";
+import CustomButton from "../../components/CustomButton";
+import { selectIsVisitor } from "../../global/authSlice";
 
 const CartScreen = () => {
   const cartItems = useSelector(selectCartItems);

@@ -17,17 +17,17 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../global/store";
-import { showError, showSuccess } from "utils/toast";
+import { showError, showSuccess } from "../../../utils/toast";
 import * as Location from "expo-location";
-import { useSingleOrder } from "hooks/useHooks";
+import { useSingleOrder } from "../../../hooks/useHooks";
 import {
   completeOrder,
   markedPickup,
   startTransitDelivery,
   completeOrderWithOTP,
-} from "api/api";
+} from "../../../api/api";
 import { mutate } from "swr";
-import { useSessionAndSocket } from "hooks/useSessionManager";
+import { useSessionAndSocket } from "../../../hooks/useSessionManager";
 
 export default function ActiveDeliveryDetails() {
   const params = useLocalSearchParams();

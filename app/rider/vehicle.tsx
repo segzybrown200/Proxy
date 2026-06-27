@@ -21,10 +21,10 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as Yup from "yup";
-import { RootState } from "global/store";
+import { RootState } from "../../global/store";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const registrationSteps = [
+const registrationSteps: any = [
   { title: "Personal", icon: "account" },
   { title: "Documents", icon: "file-document" },
   { title: "Vehicle", icon: "car" },

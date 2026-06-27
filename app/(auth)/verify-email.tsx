@@ -12,8 +12,8 @@ import CustomButton from "../../components/CustomButton";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { router, useLocalSearchParams } from "expo-router";
 import OtpTextInput from 'react-native-text-input-otp'
-import { sendOTPEmail, verifyOTP } from "api/api";
-import { showError } from "utils/toast";
+import { sendOTPEmail, verifyOTP } from "../../api/api";
+import { showError } from "../../utils/toast";
 
 
 const verifyEmail = () => {

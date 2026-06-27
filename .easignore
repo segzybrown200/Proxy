@@ -1,0 +1,22 @@
+# Exclude local build caches and temporary files from EAS tarball
+node_modules
+android/.gradle
+android/app/build
+android/.idea
+android/local.properties
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.expo
+.expo-shared
+dist
+web-build
+.DS_Store
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.tsbuildinfo

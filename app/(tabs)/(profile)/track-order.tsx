@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { formatCurrency } from "utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 import {
   View,
   Text,

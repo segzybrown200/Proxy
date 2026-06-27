@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { Image } from 'expo-image';
 import React, { useState } from "react";
-import { formatCurrency } from "utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Dashboard from "../../../assets/icons/Dashboard.svg";
 import { SearchComponent } from "../../../components/SearchInput";

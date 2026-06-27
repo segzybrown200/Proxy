@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useSearchListings } from "hooks/useHooks";
-import { formatCurrency } from "utils/currency";
+import { useSearchListings } from "../../../hooks/useHooks";
+import { formatCurrency } from "../../../utils/currency";
 import Dashboard from "../../../assets/icons/Dashboard.svg";
 
 const SearchResults = () => {

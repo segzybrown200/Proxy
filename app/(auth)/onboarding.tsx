@@ -124,7 +124,7 @@ const Onboarding = () => {
     if (index < slides.length - 1) {
       scrollRef.current?.scrollTo({ x: width * (index + 1), animated: true });
     } else {
-      router.push("/(auth)/register");
+      router.push("/(auth)/choose-role");
     }
   };
 

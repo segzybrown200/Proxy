@@ -15,7 +15,7 @@ import { logoutState, selectIsVisitor, selectUser } from "../global/authSlice";
 import Toast from "react-native-toast-message";
 import { View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getUserAuth } from "api/api";
+import { getUserAuth } from "../api/api";
 
 SplashScreen.preventAutoHideAsync();
 

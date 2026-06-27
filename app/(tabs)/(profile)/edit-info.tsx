@@ -6,7 +6,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSelector, useDispatch } from "react-redux";
-import { selectUser, updateUserState } from "global/authSlice";
+import { selectUser, updateUserState } from "../../../global/authSlice";
 import { updateUser } from "../../../api/api";
 
 export default function EditProfileScreen() {

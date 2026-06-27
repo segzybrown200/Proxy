@@ -28,9 +28,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import countryData from "../../assets/data/countries.json";
 import Apple from "../../assets/icons/Apple.svg"
 import Google from "../../assets/icons/Google.svg"
-import { createUser } from "api/api";
-import { pendingUserState } from "global/authSlice";
-import { showError } from "utils/toast";
+import { createUser } from "../../api/api";
+import { pendingUserState } from "../../global/authSlice";
+import { showError } from "../../utils/toast";
 
 const SignUp = () => {
   const [isSubmitting, setisSubmitting] = useState(false);

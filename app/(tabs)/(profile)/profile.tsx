@@ -13,17 +13,17 @@ import { router } from "expo-router";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { SellerPromoCard } from "components/SellerPromoCard";
-import { openSellerAppWithFallback } from "utils/sellerDeepLink";
+import { SellerPromoCard } from "../../../components/SellerPromoCard";
+import { openSellerAppWithFallback } from "../../../utils/sellerDeepLink";
 import {
   logoutState,
   selectIsVisitor,
   selectUser,
   VisitorState,
-} from "global/authSlice";
+} from "../../../global/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { clearCart } from "global/listingSlice";
+import { clearCart } from "../../../global/listingSlice";
 import { getRiderStatus } from "../../../api/api";
 
 export default function ProfileScreen() {
@@ -82,6 +82,12 @@ export default function ProfileScreen() {
       icon: <MaterialIcons name="message" size={24} color="#FF3B30" />,
       color: "#FF3B30",
       route: "message",
+    },
+    {
+      title: "Report",
+      icon: <MaterialIcons name="report-problem" size={24} color="#EF4444" />,
+      color: "#EF4444",
+      route: "report",
     },
     // {
     //   title: "Notifications",

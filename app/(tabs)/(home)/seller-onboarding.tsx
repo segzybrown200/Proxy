@@ -7,7 +7,7 @@ import {
   Dimensions,
 } from "react-native";
 import { router } from "expo-router";
-import { openSellerAppWithFallback } from "utils/sellerDeepLink";
+import { openSellerAppWithFallback } from "../../../utils/sellerDeepLink";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";

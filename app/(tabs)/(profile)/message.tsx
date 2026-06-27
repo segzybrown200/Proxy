@@ -12,9 +12,9 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import { useMessages } from 'hooks/useHooks'
+import { useMessages } from '../../../hooks/useHooks'
 import { useSelector } from 'react-redux'
-import { RootState } from 'global/store'
+import { RootState } from '../../../global/store'
 
 type Conversation = {
   id: string

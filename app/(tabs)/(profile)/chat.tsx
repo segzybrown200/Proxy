@@ -22,8 +22,8 @@ import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import axios from "axios";
 import { useLocalSearchParams, useNavigation, useRouter, router } from "expo-router";
-import { useGetConversions } from "hooks/useHooks";
-import { markMessagesAsRead } from "api/api";
+import { useGetConversions } from "../../../hooks/useHooks";
+import { markMessagesAsRead } from "../../../api/api";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Message = {
@@ -691,7 +691,7 @@ useEffect(() => {
             className="rounded-full mr-3"
             contentFit="cover"
           />
-          <View>
+          <View className="flex-1">
             <Text className="font-RalewayBold text-xl text-black">
               {sellers?.seller?.name || sellers?.name}
             </Text>
@@ -711,6 +711,21 @@ useEffect(() => {
                 : "Offline"}
             </Text>
           </View>
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: "/(tabs)/(profile)/report",
+                params: {
+                  targetType: "MESSAGE",
+                  targetId: receiverId || "",
+                  targetLabel: sellers?.seller?.name || sellers?.name || "this conversation",
+                },
+              })
+            }
+            className="rounded-full bg-gray-100 p-2"
+          >
+            <Ionicons name="alert-circle-outline" size={20} color="#EF4444" />
+          </TouchableOpacity>
         </View>
 
         {/* Messages */}

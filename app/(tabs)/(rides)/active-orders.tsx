@@ -3,9 +3,9 @@ import React from "react";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useRiderActiveOrder } from "hooks/useHooks";
+import { useRiderActiveOrder } from "../../../hooks/useHooks";
 import { useSelector } from "react-redux";
-import { RootState } from "global/store";
+import { RootState } from "../../../global/store";
 
 interface Order {
   status: "new" | "ACCEPTED" | "PICKED_UP" | "IN_TRANSIT";

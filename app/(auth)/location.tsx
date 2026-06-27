@@ -14,7 +14,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Location from "expo-location";
 import { useDispatch } from "react-redux";
-import { VisitorState } from "global/authSlice";
+import { VisitorState } from "../../global/authSlice";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Address = () => {

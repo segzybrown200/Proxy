@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, Image, SafeAreaView } from "react-native"
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useSelector } from "react-redux";
-import { selectUser } from "global/authSlice";
+import { selectUser } from "../../../global/authSlice";
 
 export default function PersonalInfoScreen() {
     const user:any = useSelector(selectUser)

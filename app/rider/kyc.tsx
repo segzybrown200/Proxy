@@ -23,7 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { riderKYCUpload, verifyNinNumber } from "../../api/api";
 import { showError, showSuccess } from "../../utils/toast";
 
-const registrationSteps = [
+const registrationSteps: any = [
   { title: "Personal", icon: "account" },
   { title: "Documents", icon: "file-document" },
   { title: "Vehicle", icon: "car" },

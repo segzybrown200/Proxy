@@ -23,15 +23,15 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from "react-redux";
-import { selectIsVisitor, VisitorState } from "global/authSlice";
-import { RootState } from "global/store";
+import { selectIsVisitor, VisitorState } from "../../../global/authSlice";
+import { RootState } from "../../../global/store";
 import {
   clearCart,
   selectCartItems,
   selectCartTotal,
-} from "global/listingSlice";
-import { orderPlaced, createStripePaymentIntent, chargeWallet, getWalletBalance, placeWalletOrder, getOrderPreview } from "api/api";
-import { showError } from "utils/toast";
+} from "../../../global/listingSlice";
+import { orderPlaced, createStripePaymentIntent, chargeWallet, getWalletBalance, placeWalletOrder, getOrderPreview } from "../../../api/api";
+import { showError } from "../../../utils/toast";
 
 export default function PaymentScreen() {
   const navigation = useNavigation();
