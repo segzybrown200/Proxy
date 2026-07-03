@@ -501,80 +501,9 @@ const index = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 flex px-5 bg-white">
-      {/* <SellerAdModal
-        visible={showSellerAd}
-        onClose={handleCloseSellerAd}
-        onStartSelling={handleStartSellingFromAd}
-        isSeller={isSeller}
-      /> */}
-      {/* <View className="bg-gray-100 py-4"> */}
-
-      <View></View>
-      <View
-        className="flex-row items-center mt-8 justify-between"
-        style={{ zIndex: 50, elevation: 50 }}
-      >
-        <View className="w-[75%]">
-          <View className="flex-row items-center">
-            <Text className="text-2xl  font-RalewayBold text-textColor-100">
-              Deliver to
-            </Text>
-            <FontAwesome6 name="chevron-down" size={18} color="#000" />
-          </View>
-          <TouchableOpacity
-            disabled={loadingAddress}
-            onPress={() => {
-              // allow manual retry when not loading
-              if (!loadingAddress) fetchAndStoreLocation();
-            }}
-          >
-            <Text className="text-base font-NunitoMedium  w-[80%] text-primary-100">
-              {loadingAddress
-                ? "Loading address..."
-                : userAddress || "No address found"}
-            </Text>
-            {!loadingAddress &&
-              (userAddress?.toLowerCase().includes("unable") ||
-                userAddress?.toLowerCase().includes("permission")) && (
-                <Text className="text-sm text-primary-100 mt-1">
-                  Tap to retry
-                </Text>
-              )}
-          </TouchableOpacity>
-        </View>
-
-        <View className="flex-row w-[45%] items-center gap-3">
-          <TouchableOpacity className="px-2 py-2 bg-[#F3F4F6] rounded-full">
-            <FontAwesome name="bell" size={24} color="#004CFF" />
-          </TouchableOpacity>
-          <Image
-            source={require("../../../assets/images/artist-2 1.png")}
-            style={{ width: 40, height: 40, borderRadius: 999 }}
-            contentFit="cover"
-          />
-        </View>
-      </View>
-      <View className="mt-8">
-        <TouchableOpacity
-          onPress={() => router.push("/search")}
-          className="relative"
-        >
-          <SearchComponent
-            placeholder="Search for items..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            otherStyles="pointer-events-none"
-          />
-        </TouchableOpacity>
-      </View>
-      {/* So i need a carousel here that shows featured products */}
-
-      {/* </View> */}
-
+    <SafeAreaView className="flex-1 bg-white">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        className="mt-5 "
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -584,576 +513,200 @@ const index = () => {
           />
         }
       >
-        <ImageBackground
-          source={require("../../../assets/images/Background-Image.png")}
-          blurRadius={3}
-          style={{
-            width: "100%",
-            height: 240,
-            borderRadius: 28,
-            overflow: "hidden",
-          }}
-          imageStyle={{ borderRadius: 28 }}
-          resizeMode="cover"
+        {/* Header */}
+        <View className="px-5">
+          <View
+            className="flex-row items-center mt-5 justify-between"
+            style={{ zIndex: 50, elevation: 50 }}
+          >
+            <View className="flex-row items-center flex-1">
+              <FontAwesome name="map-marker" size={20} color="#004CFF" />
+              <View className="ml-2">
+                <View className="flex-row items-center">
+                  <Text className="text-sm font-NunitoMedium text-textColor-100">
+                    {loadingAddress ? "Loading..." : (userAddress ? userAddress.split(",")[0] : "Lagos, Nigeria")}
+                  </Text>
+                  <FontAwesome6 name="chevron-down" size={14} color="#000" />
+                </View>
+              </View>
+            </View>
 
-        >
-          <View style={{ flex: 1, padding: 20, justifyContent: "flex-end" }}>
-            <Text className="text-white text-2xl font-RalewayExtraBold">
-              Discover top deals
-            </Text>
-            <Text className="text-white mt-2 text-base font-NunitoSemiBold">
-              Shop From verified sellers and get the best deals on your favorite
-              products.
-            </Text>
-            <Pressable
-              className="bg-primary-100 justify-center p-2 rounded-3xl flex-row mt-4 w-[30%] items-center"
-              onPress={() => router.push("/(tabs)/(home)/listings")}
-            >
-              <Text className="text-white mt-2 text-lg font-NunitoSemiBold">
-                Shop Now
-              </Text>
-            </Pressable>
+            <View className="flex-row items-center gap-3">
+              <View className="relative">
+                <TouchableOpacity className="px-3 py-2 bg-[#F3F4F6] rounded-full">
+                  <FontAwesome name="bell" size={20} color="#004CFF" />
+                </TouchableOpacity>
+                <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center">
+                  <Text className="text-white text-xs font-NunitoSemiBold">3</Text>
+                </View>
+              </View>
+              <View className="relative">
+                <TouchableOpacity 
+                  onPress={() => router.push("/(tabs)/cart")}
+                  className="px-3 py-2 bg-[#F3F4F6] rounded-full"
+                >
+                  <FontAwesome name="shopping-cart" size={20} color="#004CFF" />
+                </TouchableOpacity>
+                <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-5 h-5 flex items-center justify-center">
+                  <Text className="text-white text-xs font-NunitoSemiBold">2</Text>
+                </View>
+              </View>
+            </View>
           </View>
-        </ImageBackground>
 
-        <View className="mt-8">
-          <Text className="text-xl font-NunitoMedium text-textColor-100">
-            Explore Now
-          </Text>
-          {/* <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 2 }} 
-          > */}
-          <View className="mt-1 flex-row flex-wrap justify-between justify-content items-center gap-1">
-            {exploreFeatures.map((feature, i) => (
-              <Animated.View
-                key={feature.id}
-                style={{
-                  width: "48%",
-                  transform: [
-                    {
-                      scale: exploreAnims[i].interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.4, 1],
-                      }),
-                    },
-                  ],
-                  opacity: exploreAnims[i],
+          {/* Search Bar */}
+          <View className="mt-5">
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/(home)/search-results")}
+              className="relative"
+            >
+              <SearchComponent
+                placeholder="Search for products, stores..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                otherStyles="pointer-events-none"
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Top Deals Banner */}
+        <View className="mt-6 px-5">
+          <LinearGradient
+            colors={["#0052FF", "#0066FF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 24,
+              padding: 24,
+              overflow: "hidden",
+            }}
+          >
+            <View className="flex-row justify-between items-start">
+              <View className="flex-1 w-[55%]">
+                <View className="flex-row items-center mb-3">
+                  <FontAwesome name="star" size={16} color="white" />
+                  <Text className="text-white text-xs font-NunitoSemiBold ml-2">
+                    Popular
+                  </Text>
+                </View>
+                <Text className="text-white text-2xl font-RalewayExtraBold mb-2">
+                  Top Deals{"\n"}You'll Love
+                </Text>
+                <Text className="text-white text-sm font-NunitoMedium opacity-90 mb-4">
+                  Best sellers. Best prices.{"\n"}Shop now!
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/(tabs)/(home)/listings")}
+                  className="bg-white rounded-full px-5 py-2.5 w-max"
+                >
+                  <Text className="text-blue-600 font-NunitoSemiBold text-sm flex-row items-center">
+                    Shop Now →
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Right side image placeholder */}
+              <View className="w-[40%] items-center justify-center">
+                <View className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
+                  <FontAwesome name="shopping-bag" size={32} color="white" />
+                </View>
+              </View>
+            </View>
+
+            {/* Pagination dots */}
+            <View className="flex-row gap-1 mt-4 justify-center">
+              <View className="w-2 h-2 bg-white rounded-full"></View>
+              <View className="w-2 h-2 bg-white/50 rounded-full"></View>
+              <View className="w-2 h-2 bg-white/50 rounded-full"></View>
+            </View>
+          </LinearGradient>
+        </View>
+
+        {/* Category Grid */}
+        <View className="mt-8 px-5">
+          <View className="flex-row flex-wrap justify-between gap-3">
+            {[
+              { id: "marketplace", title: "Marketplace", icon: "shopping-bag" },
+              { id: "airtime", title: "Airtime & Data", icon: "mobile" },
+              { id: "bills", title: "Bills Payment", icon: "file-text" },
+              { id: "wallet", title: "Wallet", icon: "wallet" },
+              { id: "logistics", title: "Logistics", icon: "truck" },
+              { id: "gifts", title: "Gift Cards", icon: "gift" },
+              { id: "services", title: "Services", icon: "cog" },
+              { id: "more", title: "More", icon: "ellipsis-h" },
+            ].map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                className="w-[22%] items-center py-4 bg-[#F9FAFB] rounded-xl"
+                onPress={() => {
+                  if (category.id === "marketplace") {
+                    router.push("/(tabs)/(home)/category");
+                  } else if (category.id === "wallet") {
+                    router.push("/(tabs)/(profile)/wallet");
+                  } else {
+                    Alert.alert("Coming Soon", `${category.title} feature coming soon!`);
+                  }
                 }}
               >
-                {/* <TouchableOpacity key={feature.id} onPress={() => router.push(feature.route)} className="items-center w-[80px] bg-gray-100" activeOpacity={0.85}>
-                  <View className="mt-2 ] p-4 rounded-lg bg-gray-100 flex items-center justify-center">
-                    {renderFeatureIcon(feature)}
-                  </View>
-                  <Text className="text-xs font-NunitoSemiBold text-primary-100 mt-2 text-center" style={{ width: 50 }}>
-                    {feature.title}
-                  </Text>
-                </TouchableOpacity> */}
-
-                <TouchableOpacity
-                   key={feature.id}
-                  onPress={() =>
-                    router.push({
-                      pathname: feature.route,
-                      params:
-                        feature.id === "categories"
-                          ? { category: "Category" }
-                          : { route: feature.title },
-                    })
-                  }
-                  className="mt-2 flex-row items-center  bg-gray-100 p-2 rounded-lg"
-                >
-                  <View className="rounded-full w-[40px] h-[40px] flex-row items-center" style={{ backgroundColor: feature.backgroundColor }}>
-                    <Image style={{ width: 40, height: 40 }} contentFit="cover" source={feature.image}/>
-                  </View>
-                  <Text className="text-lg ml-3 font-NunitoMedium text-textColor-100">
-                    {feature.title}
-                  </Text>
-                  <View className="flex-1 flex-row justify-end">
-                    <MaterialIcons
-                      name="chevron-right"
-                      size={24}
-                      color="gray"
-                    />
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
+                <View className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                  <FontAwesome name={category.icon as any} size={20} color="#004CFF" />
+                </View>
+                <Text className="text-xs font-NunitoSemiBold text-textColor-100 text-center">
+                  {category.title}
+                </Text>
+              </TouchableOpacity>
             ))}
           </View>
-          {/* </ScrollView> */}
         </View>
 
-        {/* <View className="mt-8 flex-row flex-wrap justify-between">
-          {isLoading ? (
-            [...Array(6)].map((_, index) => (
-              <View
-                key={`skeleton-${index}`}
-                className="w-[32%] h-[100px] bg-gray-100 rounded-2xl mb-4 animate-pulse"
-              />
-            ))
-          ) : isError ? (
-            <View className="w-full py-4 items-center">
-              <Text className="text-red-500 font-NunitoMedium">
-                Failed to load categories
+        {/* Flash Deals Section */}
+        <View className="mt-8 px-5">
+          <View className="flex-row justify-between items-center mb-4">
+            <View className="flex-row items-center gap-2">
+              <FontAwesome name="bolt" size={20} color="#EF4444" />
+              <Text className="text-xl font-NunitoSemiBold text-textColor-100">
+                Flash Deals
               </Text>
-              <TouchableOpacity
-                onPress={() => window.location.reload()}
-                className="mt-2 p-2 bg-primary-100 rounded-lg"
-              >
-                <Text className="text-white font-NunitoMedium">Retry</Text>
-              </TouchableOpacity>
             </View>
-          ) : categories?.categories?.length > 0 ? (
-            // Show only first 6 categories in home view
-            categories?.categories.slice(0, 6).map((item: any, index: number) => {
-              const gradients = [
-                { colors: ['#60A5FA', '#2563EB'], icon: '#ffffff' },
-                { colors: ['#3B82F6', '#1D4ED8'], icon: '#ffffff' },
-                { colors: ['#1E40AF', '#1E3A8A'], icon: '#ffffff' },
-                { colors: ['#60A5FA', '#3B82F6'], icon: '#ffffff' },
-                { colors: ['#93C5FD', '#60A5FA'], icon: '#ffffff' },
-                { colors: ['#2563EB', '#1E40AF'], icon: '#ffffff' },
-              ];
-              const gradient = gradients[index % gradients.length];
-              
-              return (
-                <TouchableOpacity
-                  onPressIn={() => prefetchCategory(String(item.id))}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(tabs)/(home)/category",
-                      params: {
-                        id: item.id,
-                        category: item.name,
-                      },
-                    })
-                  }
-                  key={item.id}
-                  activeOpacity={0.85}
-                  className={`w-[32%] h-[130px] p-0 mb-4`}
-                  style={{
-                    elevation: 10,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.18,
-                    shadowRadius: 10,
-                    borderRadius: 16,
-                    overflow: 'hidden',
-                  }}
-                >
-                  {item?.imageUrl ? (
-                    <View style={{ height: 130, borderRadius: 16, overflow: 'hidden' }}>
-                      <Image
-                        source={{ uri: item.imageUrl }}
-                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }}
-                        contentFit="cover"
-                        onError={(error) => console.log('Category image load error:', error)}
-                      />
-                      <LinearGradient
-                        colors={gradient.colors.map(color => color + '80') as any}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={{
-                          flex: 1,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: 16,
-                        }}
-                      >
-                        <View className="items-center justify-center w-full">
-                          <Text
-                            numberOfLines={2}
-                            className="text-sm font-NunitoExtraBold text-white text-center"
-                          >
-                            {item.name}
-                          </Text>
-                        </View>
-                      </LinearGradient>
-                    </View>
-                  ) : (
-                    <LinearGradient
-                      colors={gradient.colors as any}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{
-                        height: 140,
-                        padding: 16,
-                        borderRadius: 16,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: "/(tabs)/(home)/listings",
+                  params: { route: "Flash Deals" },
+                })
+              }
+            >
+              <Text className="text-lg font-NunitoBold text-primary-100">
+                View all
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="gap-3"
+          >
+            {popular?.data && popular.data.length > 0
+              ? popular.data.slice(0, 6).map((item: any) => {
+                  const imageUrl =
+                    item?.media?.find((media: any) =>
+                      media.mimeType?.startsWith("image"),
+                    )?.url || item?.media?.[0]?.url || "";
+
+                  return (
+                    <TouchableOpacity
+                      key={item?.id}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(tabs)/(home)/details",
+                          params: { id: item.id },
+                        })
+                      }
+                      className="w-32 bg-white rounded-2xl overflow-hidden border border-gray-100"
                     >
-                      <View className="items-center justify-center w-full">
-                        <View className="mb-2 w-[70px] h-[70px] rounded-full justify-center items-center bg-white/20">
-                          {item.iconLib === "Ionicons" ? (
-                            <Ionicons name={item.iconName} size={36} color={gradient.icon} />
-                          ) : item.iconLib === "AntDesign" ? (
-                            <AntDesign name={item.iconName} size={36} color={gradient.icon} />
-                          ) : item.iconLib === "Feather" ? (
-                            <Feather name={item.iconName} size={36} color={gradient.icon} />
-                          ) : (
-                            <Text className="text-white font-NunitoBold text-lg">{(item.name || "").charAt(0)}</Text>
-                          )}
-                        </View>
-                        <Text
-                          numberOfLines={2}
-                          className="text-sm font-NunitoExtraBold text-white text-center mt-1"
-                        >
-                          {item.name}
-                        </Text>
-                      </View>
-                    </LinearGradient>
-                  )}
-                </TouchableOpacity>
-              );
-            })
-          ) : (
-            <Text className="text-gray-500 font-NunitoMedium w-full text-center py-4">
-              No categories available
-            </Text>
-          )}
-        </View>  */}
-
-        {/* Ads  */}
-
-        {/* Popular Selling */}
-        <View>
-          <View className="mt-8 flex-row justify-between items-center">
-            <Text className="text-xl font-NunitoMedium text-textColor-100">
-              Popular Selling
-            </Text>
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/(tabs)/(home)/listings",
-                  params: { route: "Selling" },
-                })
-              }
-              className="flex-row items-center gap-1"
-            >
-              <Text className="text-lg font-NunitoBold text-primary-100">
-                View All
-              </Text>
-              <MaterialIcons
-                name="arrow-forward-ios"
-                size={18}
-                color="#004CFF"
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* List of Popular Selling Items */}
-          <View className="mt-5 flex-row flex-wrap justify-between gap-3">
-            {PopularisLoading &&
-            (!popular?.data || popular.data.length === 0) ? (
-              [...Array(4)].map((_, index) => (
-                <View
-                  key={`popular-skeleton-${index}`}
-                  className="w-[48%] rounded-[28px] bg-gray-200 animate-pulse"
-                  style={{ height: 280 }}
-                />
-              ))
-            ) : popular?.data && popular.data.length > 0 ? (
-              popular.data.slice(0, 4).map((item: any) => {
-                const imageUrl =
-                  item?.media?.find((media: any) => media.mimeType?.startsWith("image"))?.url ||
-                  item?.media?.[0]?.url ||
-                  "";
-
-                return (
-                  <TouchableOpacity
-                    key={item?.id}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/(tabs)/(home)/details",
-                        params: { id: item.id },
-                      })
-                    }
-                    className="w-[48%] border border-primary-100 rounded-[28px] bg-white shadow-sm shadow-slate-200 overflow-hidden"
-                  >
-                    <View className="h-[170px] relative bg-slate-100">
-                      <Image
-                        source={{ uri: imageUrl }}
-                        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-                        contentFit="cover"
-                      />
-                      <View className="absolute inset-0 bg-black/20" />
-                      <View className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1">
-                        <Text className="text-xs font-NunitoSemiBold text-textColor-100">
-                          Popular
-                        </Text>
-                      </View>
-                    </View>
-                    <View className="p-4">
-                      <Text
-                        numberOfLines={2}
-                        className="text-base font-RalewayBold text-textColor-100"
-                      >
-                        {item?.title || item?.name}
-                      </Text>
-                      <Text className="mt-3 text-lg font-RalewayExtraBold text-primary-100">
-                        {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
-                      </Text>
-                      <Text className="mt-2 text-sm font-NunitoMedium text-gray-500">
-                        {item?.seller?.vendorApplication?.location?.city}, {item?.seller?.vendorApplication?.location?.country}
-                      </Text>
-                      <View className="mt-4 flex-row items-center justify-between">
-                        <View className="rounded-full bg-primary-100/10 px-3 py-1">
-                          <Text className="text-xs font-NunitoBold text-primary-100">
-                            {item?.condition?.toUpperCase() || "NEW"}
-                          </Text>
-                        </View>
-                        <FontAwesome6 name="plus" size={18} color="#004CFF" />
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })
-            ) : (
-              <Text className="text-gray-500 font-NunitoMedium w-full text-center py-4">
-                No popular listings found
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Jobs & Services (combined) */}
-        <View>
-          <View className="mt-8 flex-row justify-between items-center">
-            <Text className="text-xl font-NunitoMedium text-textColor-100">
-              Jobs & Services
-            </Text>
-            {categories?.categories && categories.categories.length > 0 && (
-              <TouchableOpacity
-                onPress={() => {
-                  const jobsCat = categories.categories.find((c: any) =>
-                    (c.name || c.title || "").toLowerCase().includes("job"),
-                  );
-                  const servicesCat = categories.categories.find((c: any) =>
-                    (c.name || c.title || "").toLowerCase().includes("service"),
-                  );
-
-                  let targetCat = jobsCat || servicesCat;
-
-                  if (targetCat) {
-                    console.log(
-                      "Navigating to category:",
-                      targetCat.name || targetCat.title,
-                      "ID:",
-                      targetCat.id,
-                    );
-                    router.push({
-                      pathname: "/(tabs)/(home)/category",
-                      params: {
-                        category: targetCat.name || targetCat.title,
-                        id: String(targetCat.id),
-                      },
-                    });
-                  } else {
-                    console.log(
-                      "No jobs/services category found, available categories:",
-                      categories.categories.map((c: any) => c.name || c.title),
-                    );
-                    router.push({
-                      pathname: "/(tabs)/(home)/listings",
-                      params: { route: "Jobs & Services" },
-                    });
-                  }
-                }}
-                className="flex-row items-center gap-1"
-              >
-                <Text className="text-lg font-NunitoBold text-primary-100">
-                  View All
-                </Text>
-                <MaterialIcons
-                  name="arrow-forward-ios"
-                  size={18}
-                  color="#004CFF"
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-          <View className="flex flex-row flex-wrap justify-between gap-1">
-            {jobsLoading &&
-            servicesLoading &&
-            jobsListings.length === 0 &&
-            servicesListings.length === 0
-              ? [...Array(4)].map((_, index) => (
-                  <View
-                    key={`jobs-skeleton-${index}`}
-                    className="mt-5 w-[49%] rounded-lg bg-gray-200 animate-pulse"
-                    style={{ height: 240 }}
-                  />
-                ))
-              : (() => {
-                  const combined = [
-                    ...(jobsListings || []),
-                    ...(servicesListings || []),
-                  ];
-                  const map = new Map<string, any>();
-                  combined.forEach((it: any) => {
-                    if (it?.id) map.set(it.id, it);
-                  });
-                  const uniq = Array.from(map.values()).slice(0, 4);
-                  return uniq.length > 0 ? (
-                    uniq.map((item: any) => (
-                      <TouchableOpacity
-                        key={item?.id}
-                        onPress={() =>
-                          router.push({
-                            pathname: "/(tabs)/(home)/details",
-                            params: { id: item.id },
-                          })
-                        }
-                        className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden"
-                        style={{ height: 240, position: "relative" }}
-                      >
-                        <View style={{ flex: 1, position: "relative" }}>
-                          <Image
-                            source={{ uri: item?.media?.[0]?.url }}
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                            }}
-                            contentFit="cover"
-                            onError={(e) =>
-                              console.log("Jobs&Services image error", e)
-                            }
-                          />
-                          <LinearGradient
-                            colors={
-                              ["rgba(0,0,0,0.5)", "rgba(0,0,0,0.2)"] as any
-                            }
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              padding: 10,
-                              justifyContent: "space-between",
-                            }}
-                          >
-                            <View className="flex-row justify-between items-start">
-                              <Text
-                                numberOfLines={2}
-                                className="text-lg font-NunitoRegular text-white w-[70%]"
-                              >
-                                {item?.title}
-                              </Text>
-                              <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center">
-                                <FontAwesome6
-                                  name="plus"
-                                  size={18}
-                                  color="white"
-                                />
-                              </TouchableOpacity>
-                            </View>
-                            <View>
-                              <Text className="text-[22px] font-RalewayExtraBold text-white">
-                                {formatCurrency(
-                                  item?.price,
-                                  "NGN",
-                                  "Nigerian Naira",
-                                )}
-                              </Text>
-                              <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center mt-2">
-                                {item?.condition?.toUpperCase()}
-                              </Text>
-                              <Text className="font-NunitoMedium text-lg text-white">
-                                {
-                                  item?.seller?.vendorApplication?.location
-                                    ?.city
-                                }
-                                ,{" "}
-                                {
-                                  item?.seller?.vendorApplication?.location
-                                    ?.country
-                                }
-                              </Text>
-                            </View>
-                          </LinearGradient>
-                        </View>
-                        <View
-                          className="bg-primary-100 p-2 rounded-b-lg absolute bottom-2 right-2"
-                          style={{ zIndex: 0, elevation: 0 }}
-                        >
-                          <Text className="text-white font-NunitoLight">
-                            Verified ID
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    ))
-                  ) : (
-                    <Text className="text-gray-500 font-NunitoMedium w-full text-center py-4">
-                      No jobs or services available
-                    </Text>
-                  );
-                })()}
-          </View>
-        </View>
-
-        {/* New Listing */}
-        <View>
-          <View className="mt-8 flex-row justify-between items-center">
-            <Text className="text-xl font-NunitoMedium text-textColor-100">
-              New Listing
-            </Text>
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/(tabs)/(home)/listings",
-                  params: { route: "Listings" },
-                })
-              }
-              className="flex-row items-center gap-1"
-            >
-              <Text className="text-lg font-NunitoBold text-primary-100">
-                View All
-              </Text>
-              {/* <FontAwesome6 name="arrow-right-long" size={18} color="#004CFF" /> */}
-              <MaterialIcons
-                name="arrow-forward-ios"
-                size={18}
-                color="#004CFF"
-              />
-            </TouchableOpacity>
-          </View>
-          <View className="flex flex-row flex-wrap justify-between gap-1">
-            {NewListingsLocading && (!NewListing || NewListing.length === 0) ? (
-              [...Array(4)].map((_, index) => (
-                <View
-                  key={`newlist-skeleton-${index}`}
-                  className="mt-5 w-[49%] rounded-lg bg-gray-200 animate-pulse"
-                  style={{ height: 240 }}
-                />
-              ))
-            ) : NewListing?.data && NewListing.data.length > 0 ? (
-              NewListing.data.slice(0, 4).map((item: any) => (
-                <TouchableOpacity
-                  key={item?.id}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(tabs)/(home)/details",
-                      params: { id: item.id },
-                    })
-                  }
-                  className="mt-5 w-[49%] border border-primary-100 rounded-lg overflow-hidden"
-                  style={{ height: 240, position: "relative" }}
-                >
-                  {(() => {
-                    const jpegImage = item?.media?.find(
-                      (media: any) => media.mimeType === "image/jpeg",
-                    );
-                    const imageUrl = jpegImage?.url || item?.media[0]?.url;
-                    return (
-                      <View style={{ flex: 1, position: "relative" }}>
+                      <View className="h-24 bg-gray-200 relative">
                         <Image
                           source={{ uri: imageUrl }}
                           style={{
@@ -1164,82 +717,115 @@ const index = () => {
                             bottom: 0,
                           }}
                           contentFit="cover"
-                          onError={(error) =>
-                            console.log("Image load error:", error)
-                          }
                         />
-                        <LinearGradient
-                          colors={["rgba(0,0,0,0.5)", "rgba(0,0,0,0.2)"] as any}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            padding: 10,
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <View className="flex-row justify-between items-start">
-                            <Text
-                              numberOfLines={2}
-                              className="text-lg font-NunitoRegular text-white w-[70%]"
-                            >
-                              {item?.title}
-                            </Text>
-                            <TouchableOpacity className="flex-row px-2 py-1.5 rounded-full bg-primary-100 justify-between items-center">
-                              <FontAwesome6
-                                name="plus"
-                                size={18}
-                                color="white"
-                              />
-                            </TouchableOpacity>
-                          </View>
-                          <View>
-                            <Text className="text-[22px] font-RalewayExtraBold text-white">
-                              {formatCurrency(
-                                item?.price,
-                                "NGN",
-                                "Nigerian Naira",
-                              )}
-                            </Text>
-                            <Text className="bg-primary-100/20 text-lg rounded-lg text-primary-100 p-2 font-NunitoSemiBold flex flex-row justify-center items-center mt-2">
-                              {item?.condition.toUpperCase()}
-                            </Text>
-                            <Text className="font-NunitoMedium text-lg text-white">
-                              {item?.seller?.vendorApplication?.location?.city},{" "}
-                              {
-                                item?.seller?.vendorApplication?.location
-                                  ?.country
-                              }
-                            </Text>
-                          </View>
-                        </LinearGradient>
+                        <View className="absolute top-1 left-1 bg-red-500 px-2 py-1 rounded-full">
+                          <Text className="text-white text-xs font-NunitoSemiBold">
+                            -20%
+                          </Text>
+                        </View>
                       </View>
-                    );
-                  })()}
+                      <View className="p-2">
+                        <Text
+                          numberOfLines={1}
+                          className="text-xs font-NunitoSemiBold text-textColor-100"
+                        >
+                          {item?.title}
+                        </Text>
+                        <Text className="text-sm font-RalewayBold text-primary-100 mt-1">
+                          {formatCurrency(item?.price, "NGN", "Nigerian Naira")}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              : [...Array(4)].map((_, i) => (
                   <View
-                    className="bg-primary-100 p-2 rounded-b-lg absolute bottom-2 right-2"
-                    style={{ zIndex: 0, elevation: 0 }}
-                  >
-                    <Text className="text-white font-NunitoLight">
-                      Verified ID
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <Text className="text-gray-500 font-NunitoMedium w-full text-center py-4">
-                No new listings found
+                    key={i}
+                    className="w-32 h-40 bg-gray-200 rounded-2xl animate-pulse"
+                  />
+                ))}
+          </ScrollView>
+        </View>
+
+        {/* Recommended Stores */}
+        <View className="mt-8 px-5 pb-8">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-xl font-NunitoSemiBold text-textColor-100">
+              Recommended Stores
+            </Text>
+            <TouchableOpacity>
+              <Text className="text-lg font-NunitoBold text-primary-100">
+                See all
               </Text>
-            )}
+            </TouchableOpacity>
+          </View>
+
+          <View className="flex-row flex-wrap justify-between gap-3">
+            {[
+              {
+                id: 1,
+                name: "TechZone",
+                rating: 4.8,
+                reviews: 120,
+                verified: true,
+              },
+              {
+                id: 2,
+                name: "Home World",
+                rating: 4.6,
+                reviews: 98,
+                verified: true,
+              },
+              {
+                id: 3,
+                name: "Fashion Hub",
+                rating: 4.7,
+                reviews: 76,
+                verified: true,
+              },
+              {
+                id: 4,
+                name: "Gadge",
+                rating: 4.5,
+                reviews: 45,
+                verified: true,
+              },
+            ].map((store) => (
+              <TouchableOpacity
+                key={store.id}
+                className="w-[48%] bg-white border border-gray-100 rounded-2xl p-3"
+              >
+                <View className="w-full h-16 bg-gradient-to-r from-blue-100 to-blue-50 rounded-xl flex items-center justify-center mb-2">
+                  <FontAwesome name="lock" size={24} color="#004CFF" />
+                </View>
+                <View className="flex-row items-center justify-between">
+                  <View>
+                    <Text className="text-sm font-NunitoSemiBold text-textColor-100">
+                      {store.name}
+                    </Text>
+                    {store.verified && (
+                      <FontAwesome
+                        name="check-circle"
+                        size={12}
+                        color="#10B981"
+                        style={{ marginTop: 2 }}
+                      />
+                    )}
+                  </View>
+                </View>
+                <View className="flex-row items-center gap-1 mt-2">
+                  <FontAwesome name="star" size={12} color="#FCD34D" />
+                  <Text className="text-xs font-NunitoSemiBold text-textColor-100">
+                    {store.rating} ({store.reviews})
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </ScrollView>
 
-      {/* rest of home screen content */}
+      {/* Bottom padding */}
     </SafeAreaView>
   );
 };
