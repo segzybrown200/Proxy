@@ -54,6 +54,11 @@ export default function ActiveDeliveryDetails() {
   const [routeCoords, setRouteCoords] = useState<
     Array<{ latitude: number; longitude: number }>
   >([]);
+
+  const isValidCoordinate = (point: any) =>
+    point &&
+    Number.isFinite(Number(point.latitude)) &&
+    Number.isFinite(Number(point.longitude));
   const [routeSteps, setRouteSteps] = useState<
     Array<{ html_instructions?: string; distance?: any; duration?: any }>
   >([]);
@@ -78,21 +83,36 @@ export default function ActiveDeliveryDetails() {
     longitude: Number(delivery?.data?.dropoffLng),
   };
   useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission denied",
-          "Location access is needed to navigate"
-        );
-        return;
+    let interval: NodeJS.Timeout | null = null;
+
+    const requestLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission denied",
+            "Location access is needed to navigate"
+          );
+          return;
+        }
+        const location = await Location.getCurrentPositionAsync({});
+        if (isValidCoordinate(location.coords)) {
+          setCoords({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to get location:", err);
       }
-      const location = await Location.getCurrentPositionAsync({});
-      setCoords({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-    })();
+    };
+
+    requestLocation();
+    interval = setInterval(requestLocation, 10000);
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, []);
   useEffect(() => {
     if (!deliveryId) return;
@@ -176,6 +196,18 @@ export default function ActiveDeliveryDetails() {
     origin: { latitude: number; longitude: number },
     destination: { latitude: number; longitude: number }
   ) => {
+    if (!isValidCoordinate(origin) || !isValidCoordinate(destination)) {
+      console.warn("Invalid route coordinates, skipping route fetch", origin, destination);
+      setRouteCoords(
+        isValidCoordinate(origin) && isValidCoordinate(destination)
+          ? [origin, destination]
+          : []
+      );
+      setRouteInfo(null);
+      setRouteSteps([]);
+      return;
+    }
+
     try {
       setRouteLoading(true);
 
@@ -226,7 +258,10 @@ export default function ActiveDeliveryDetails() {
         }
       }
     } catch (err) {
-      console.warn("Failed to fetch route from backend", err);
+      console.warn("Failed to fetch route from backend, using fallback coordinates", err);
+      setRouteCoords([origin, destination]);
+      setRouteInfo(null);
+      setRouteSteps([]);
     } finally {
       setRouteLoading(false);
     }
@@ -245,6 +280,25 @@ export default function ActiveDeliveryDetails() {
       fetchRoute(pickup, dropoff);
     }
   }, [pickup.latitude, pickup.longitude, dropoff.latitude, dropoff.longitude]);
+
+  // Refresh route from the rider's current position when available.
+  useEffect(() => {
+    if (
+      !coords ||
+      !isValidCoordinate(coords) ||
+      !isValidCoordinate(dropoff) ||
+      routeLoading
+    ) {
+      return;
+    }
+
+    if (
+      delivery?.data?.status === "IN_TRANSIT" ||
+      delivery?.data?.status === "PICKUP_UP"
+    ) {
+      fetchRoute(coords, dropoff);
+    }
+  }, [coords?.latitude, coords?.longitude, dropoff.latitude, dropoff.longitude, delivery?.data?.status, routeLoading]);
 
   const handlePickUpStart = async () => {
     setpickUP(true);

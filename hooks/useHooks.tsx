@@ -83,17 +83,17 @@ export const useCategoryListings = (
 
 export const useSearchListings = (params: Record<string, any> | null) => {
   const fetcher = async (key: string) => {
-    // key is the serialized params string, but we'll call API directly with params
     const searchParams = params || {};
     const res = await (await import("../api/api")).searchListings(searchParams);
     return res.data;
   };
 
   // Build SWR key based on serialized params so it revalidates when filters change
-  const key = params ? `/listings/search?${Object.keys(params)
-    .filter(k => params[k] !== undefined && params[k] !== null && params[k] !== "")
-    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
-    .join("&")}` : null;
+  const queryString = Object.keys(params || {})
+    .filter((k) => params?.[k] !== undefined && params?.[k] !== null && params?.[k] !== "")
+    .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params?.[k])}`)
+    .join("&");
+  const key = `/listings/search${queryString ? `?${queryString}` : ""}`;
 
   const { data, error, isLoading, mutate }: any = useSWR(key, fetcher, {
     revalidateOnFocus: false,

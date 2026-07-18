@@ -6,6 +6,7 @@ import HomeIcon from "../../assets/icons/Home.svg";
 import HomeIconFocused from "../../assets/icons/Home-focused.svg";
 import SearchIcon from "../../assets/icons/Search.svg";
 import SearchIconFocused from "../../assets/icons/Search-focused.svg";
+import MenuIcon from "../../assets/icons/menu.svg";
 import ProfileIcon from "../../assets/icons/profile.svg";
 import ProfileIconFocused from "../../assets/icons/profile-focused.svg";
 import BagIcon from "../../assets/icons/bag.svg";
@@ -82,14 +83,14 @@ const _layout = () => {
         })}
         options={{
           popToTopOnBlur: true,
-
+          title: "Marketplace",
           tabBarIcon: ({ focused }) => (
             <View className={focused ? "bg-[#004CFF] rounded-full p-2" : ""}>
-              {focused ? (
-                <SearchIconFocused width={24} height={24} />
-              ) : (
-                <SearchIcon width={24} height={24} />
-              )}
+              <MenuIcon
+                width={24}
+                height={24}
+                style={{ color: focused ? "#FFFFFF" : "#000000" }}
+              />
             </View>
           ),
         }}

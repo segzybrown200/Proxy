@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, SafeAreaView, ScrollView } from "react-na
 import { router, useLocalSearchParams } from "expo-router";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { openSellerAppWithFallback } from "@/utils/sellerDeepLink";
 
 const AccountSummary = () => {
   const { role } = useLocalSearchParams();
@@ -28,9 +29,9 @@ const AccountSummary = () => {
       ];
 
   const primaryButtonText = isVendor ? "Start Selling" : "Register as User";
-  const primaryAction = () => {
+  const primaryAction = async() => {
     if (isVendor) {
-      router.push("/(tabs)/(home)/seller-onboarding");
+     await  openSellerAppWithFallback();
     } else {
       router.push("/(auth)/register");
     }

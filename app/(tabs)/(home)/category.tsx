@@ -29,8 +29,9 @@ const category = () => {
       categoryId: id as string | undefined,
       subCategoryId: subCategoryId as string | undefined,
     }
-
+ 
   );
+  console.log(category)
   const backendCategories: any = useMemo(() => categories?.categories || [], [categories]);
   const selectedCategory =
     backendCategories?.find((c: any) => String(c.id) === String(id)) || null;

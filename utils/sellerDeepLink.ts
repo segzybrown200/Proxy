@@ -6,9 +6,9 @@ export const SELLER_APP_STORE_URL = "https://apps.apple.com/app/id1234567890";
 
 export const openSellerAppWithFallback = async (): Promise<{ opened: boolean; fallbackUrl?: string; error?: string }> => {
   try {
-    const canOpen = await Linking.canOpenURL(SELLER_URL_SCHEME);
+    const canOpen = await Linking.canOpenURL(SELLER_PLAY_STORE_URL);
     if (canOpen) {
-      await Linking.openURL(SELLER_URL_SCHEME);
+      await Linking.openURL(SELLER_PLAY_STORE_URL);
       return { opened: true };
     }
 

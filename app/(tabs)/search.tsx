@@ -7,6 +7,7 @@ import {
   ScrollView,
   TextInput,
   RefreshControl,
+  StatusBar
 } from "react-native";
 import React, { useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,7 +17,11 @@ import Dashboard from "../../assets/icons/Dashboard.svg";
 import { SearchComponent } from "../../components/SearchInput";
 import Filter from "../../assets/icons/filter.svg";
 import { router } from "expo-router";
-import { useCategory } from "../../hooks/useHooks";
+import { useCategory, useNewListings, usePopularListings } from "../../hooks/useHooks";
+import { Image } from "expo-image";
+import { formatCurrency } from "../../utils/currency";
+import { LinearGradient } from "expo-linear-gradient";
+
 
 
 const condition = ["new", "used"];
@@ -43,6 +48,18 @@ const search = () => {
   const [showRecentSearches, setShowRecentSearches] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { categories, isError, isLoading, mutate } = useCategory();
+  const { listings: newListings, isLoading: newListingsLoading } = useNewListings();
+  const { popular, isLoading: popularLoading } = usePopularListings();
+  const marketplaceItems = [
+    ...((newListings?.data || []).map((item: any) => ({ ...item, __source: "new" }))),
+    ...((popular?.data || []).map((item: any) => ({ ...item, __source: "popular" }))),
+  ].filter((item: any, index: number, self: any[]) => {
+    const uniqueKey = item?.id ? `id-${item.id}` : `title-${item?.title || index}`;
+    return self.findIndex((candidate: any) => {
+      const candidateKey = candidate?.id ? `id-${candidate.id}` : `title-${candidate?.title || index}`;
+      return candidateKey === uniqueKey;
+    }) === index;
+  });
 
   // Load recent searches on component mount
   React.useEffect(() => {
@@ -116,14 +133,13 @@ const search = () => {
       }
 
       // navigate to results screen and pass filters as query params
-      router.push({
-        pathname: "./(home)/search-results",
-        params: { filters: JSON.stringify(params) },
-      });
+      const filtersParam = encodeURIComponent(JSON.stringify(params));
+      router.push(`/(tabs)/(home)/search-results?filters=${filtersParam}`);
       setIsVisible(false);
     };
   return (
-    <SafeAreaView className="flex-1 bg-[#sF9FAFB] p-4">
+    <SafeAreaView className="flex-1 bg-[#F9FAFB] p-4">
+      <StatusBar style="dark" backgroundColor="#F9FAFB" />
       <View className=" mt-5 flex flex-row items-center gap-4">
         <TouchableOpacity
           onPress={() => router.push("/(tabs)/(home)")}
@@ -131,12 +147,12 @@ const search = () => {
         >
           <Dashboard width={20} height={20} />
         </TouchableOpacity>
-        <Text className="font-RalewayBold text-3xl">Search</Text>
+        <Text className="font-RalewayBold text-3xl">Marketplace</Text>
       </View>
 
       <View className="mt-5 flex  flex-row items-center">
         <SearchComponent
-          placeholder="Search......"
+          placeholder="Search marketplace......"
           otherStyles={"flex-1"}
           white="yes"
           value={searchTerm}
@@ -146,14 +162,24 @@ const search = () => {
           }}
           onSubmitEditing={async () => {
             if (searchTerm.trim()) {
-              // Add to recent searches
-              const newSearches = [searchTerm, ...recentSearches.filter(s => s !== searchTerm)].slice(0, 5);
+              const newSearches = [searchTerm, ...recentSearches.filter((s) => s !== searchTerm)].slice(0, 5);
               setRecentSearches(newSearches);
-              await AsyncStorage.setItem('recentSearches', JSON.stringify(newSearches));
+              await AsyncStorage.setItem("recentSearches", JSON.stringify(newSearches));
               setShowRecentSearches(false);
-              
               router.push({
-                pathname: "./(home)/search-results",
+                pathname: "/(tabs)/(home)/search-results",
+                params: { filters: JSON.stringify({ q: searchTerm.trim() }) },
+              });
+            }
+          }}
+          onPressIcon={async () => {
+            if (searchTerm.trim()) {
+              const newSearches = [searchTerm, ...recentSearches.filter((s) => s !== searchTerm)].slice(0, 5);
+              setRecentSearches(newSearches);
+              await AsyncStorage.setItem("recentSearches", JSON.stringify(newSearches));
+              setShowRecentSearches(false);
+              router.push({
+                pathname: "/(tabs)/(home)/search-results",
                 params: { filters: JSON.stringify({ q: searchTerm.trim() }) },
               });
             }
@@ -170,10 +196,8 @@ const search = () => {
                 onPress={() => {
                   setSearchTerm(search);
                   setShowRecentSearches(false);
-                  router.push({
-                    pathname: "./(home)/search-results",
-                    params: { filters: JSON.stringify({ q: search }) },
-                  });
+                  const filtersParam = encodeURIComponent(JSON.stringify({ q: search }));
+                  router.push(`/(tabs)/(home)/search-results?filters=${filtersParam}`);
                 }}
               >
                 <Ionicons name="time-outline" size={20} color="#666" />
@@ -201,6 +225,41 @@ const search = () => {
           <Filter width={30} height={30} />
         </TouchableOpacity>
       </View>
+
+      <ScrollView className="mt-5 flex-1" showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setTimeout(() => setRefreshing(false), 500); }} colors={["#004CFF"]} tintColor="#004CFF" />}>
+        <View className="rounded-2xl bg-primary-100 p-4">
+          <Text className="font-RalewayBold text-xl text-white">Featured marketplace</Text>
+          <Text className="mt-1 text-sm font-NunitoRegular text-textColor-200">Browse fresh listings and popular deals in one place.</Text>
+        </View>
+
+        <View className="mt-4 flex flex-row flex-wrap justify-between gap-1">
+          {(marketplaceItems || []).slice(0, 12).map((item: any, index: number) => {
+            const imageUrl = item?.media?.find((media: any) => media.mimeType?.startsWith("image"))?.url || item?.media?.[0]?.url;
+            return (
+              <TouchableOpacity
+                key={`${item?.__source || "marketplace"}-${item?.id || item?.title || index}`}
+                onPress={() => router.push({ pathname: "/(tabs)/(home)/details", params: { id: item.id } })}
+                className="mt-3 w-[49%] rounded-2xl border border-gray-200 bg-white"
+              >
+                <View className="h-36 overflow-hidden rounded-t-2xl">
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                  />
+                </View>
+                <View className="p-3">
+                  <Text className="text-base font-NunitoSemiBold text-textColor-100" numberOfLines={2}>{item?.title}</Text>
+                  <Text className="mt-2 text-xl font-RalewayBold text-textColor-100">{formatCurrency(item?.price, "NGN", "en-NG")}</Text>
+                  <Text className="mt-2 rounded-full bg-primary-100/10 px-2 py-1 self-start text-xs font-NunitoSemiBold text-primary-100">
+                    {item?.condition?.toUpperCase() || "NEW"}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
 
       {/* Filter Modal */}
       <Modal

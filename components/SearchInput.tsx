@@ -1,5 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { View, Text } from 'react-native'
+import { View, Text, TouchableOpacity } from 'react-native'
 import React from 'react'
 import { TextInput } from "react-native-gesture-handler";
 
@@ -11,6 +11,7 @@ interface Props {
   value?: string;
   onChangeText?: (text: string) => void;
   onSubmitEditing?: () => void;
+  onPressIcon?: () => void;
 }
 
 
@@ -21,7 +22,8 @@ export const SearchComponent:React.FC<Props> = ({
   white,
   value,
   onChangeText,
-  onSubmitEditing
+  onSubmitEditing,
+  onPressIcon,
 }) => {
   return (
     <View className={`w-full bg-[#F0F0F0] ${white === "yes" ? "bg-white" : null}  px-4 py-1.5  rounded-3xl  flex flex-row items-center ${otherStyles}`}>
@@ -33,10 +35,15 @@ export const SearchComponent:React.FC<Props> = ({
         underlineColorAndroid="transparent"
         value={value}
         onChangeText={onChangeText}
-        onSubmitEditing={onSubmitEditing}
+        onSubmitEditing={() => {
+          onSubmitEditing?.();
+        }}
+        blurOnSubmit={true}
         returnKeyType="search"
       />
-      <FontAwesome name="search" size={24} color="black" />
+      <TouchableOpacity onPress={onPressIcon} disabled={!onPressIcon}>
+        <FontAwesome name="search" size={24} color="black" />
+      </TouchableOpacity>
     </View>
   )
 }
